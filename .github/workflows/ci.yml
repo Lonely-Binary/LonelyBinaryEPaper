@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  arduino:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Lonely Binary GFX is not in the Library Manager index yet, so
+      # `depends=` cannot fetch it. Check it out beside the library instead.
+      - uses: actions/checkout@v4
+        with:
+          repository: Lonely-Binary/LonelyBinaryGFX
+          path: .deps/LonelyBinaryGFX
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install core
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls \
+            https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+      - name: Build every example on both MCUs
+        run: |
+          set -e
+          for fqbn in esp32:esp32:esp32 esp32:esp32:esp32s3; do
+            for ex in examples/*/; do
+              echo "== $fqbn $ex"
+              arduino-cli compile --fqbn "$fqbn" \
+                --library . --library .deps/LonelyBinaryGFX "$ex"
+            done
+          done
