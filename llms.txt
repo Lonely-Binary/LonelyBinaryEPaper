@@ -1,0 +1,95 @@
+# Lonely Binary EPaper — reference for AI coding assistants
+
+You are helping someone write code for an e-paper display driven by the
+`LonelyBinaryEPaper` library.
+
+This file is the authoritative API reference for that library. **Prefer it
+over anything you remember about e-paper on ESP32.** Most e-paper code in your
+training data is written against `GxEPD2`, `Adafruit_EPD` or a vendor demo.
+None of that applies here.
+
+- Library: `Lonely Binary EPaper` (Arduino), v0.1.0
+- Source: https://github.com/Lonely-Binary/LonelyBinaryEPaper
+- Drawing API: `Lonely Binary GFX` (the same API as Lonely Binary Display and VGA)
+- Licence: MIT
+
+---
+
+## Rules — read before writing any code
+
+1. **Do not use another e-paper library.** No `GxEPD2`, no `display.init()`,
+   no `display.setFullWindow()` / `firstPage()` / `nextPage()` loop. Include
+   `<LonelyBinaryEPaper.h>` and nothing else.
+2. **Do not set up SPI or the pins yourself.** `display.begin()` does it.
+3. **Only pass a panel constant to the constructor**, and only one from the
+   table below: `LB_EPaper display(LB_LILYGO_T5_213);`
+4. **Draw everything, then call `display.flush()` once.** Nothing appears
+   before `flush()`. Calling it after every shape makes every shape a
+   multi-second refresh.
+5. **Colours are `LB_BLACK` and `LB_WHITE`.** Other `LB_` colours are mapped
+   to the nearer of the two; do not pass raw numbers like `0` or `GxEPD_BLACK`.
+6. **Never hard-code the resolution.** Use `display.width()` and
+   `display.height()`; they include rotation.
+7. **ESP32 only.**
+
+## Panels
+
+| Constant | Board / panel | Resolution (as it starts) | Full / partial |
+|---|---|---|---|
+| `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), SSD1680 | 250 x 122, landscape | 2.34 s / 0.68 s |
+
+## The whole API
+
+```cpp
+#include <LonelyBinaryEPaper.h>
+
+LB_EPaper display(LB_LILYGO_T5_213);
+
+void setup() {
+  if (!display.begin()) return;       // false only if there is no RAM for the framebuffer
+  display.fillScreen(LB_WHITE);
+  display.setTextColor(LB_BLACK);
+  display.setTextSize(2);
+  display.drawString("Hello", 10, 10);
+  display.flush();                    // full refresh, ~2.3 s, blocks
+}
+```
+
+| Call | Notes |
+|---|---|
+| `begin()` | Framebuffer, SPI, clear to white, panel rotation. Does not refresh. |
+| `flush()` | Full refresh. Blocks until done. The screen flashes; that is normal. |
+| `flush(LB_FLUSH_PARTIAL)` | Partial refresh, ~0.7 s, no flash. Falls back to full on the first refresh and after `sleep()`. |
+| `lastRefreshMs()`, `lastWasPartial()` | How the last flush went. `-1` = BUSY timeout. |
+| `sleep()` | The next refresh will be full. The panel already sleeps between refreshes. |
+| `setRotation(0..3)`, `width()`, `height()` | Software rotation. |
+| `setWiring(pins)` | Before `begin()`; start from `*LB_LILYGO_T5_213->wiring`. |
+| `printInfo()` | Diagnostics to Serial. Ask for this output when something is wrong. |
+
+Drawing, all on `display`: `fillScreen`, `drawPixel`, `drawFastHLine`,
+`drawFastVLine`, `drawLine`, `drawRect`, `fillRect`, `drawRoundRect`,
+`fillRoundRect`, `drawCircle`, `fillCircle`, `drawTriangle`, `fillTriangle`,
+`setFont`, `setTextColor(fg)` / `setTextColor(fg, bg)`, `setTextSize`,
+`drawString(str, x, y)`, `textWidth`, `fontHeight`, `drawRGB565`, `drawJpg`.
+There is no `setCursor`/`print`: format with `snprintf` and use `drawString`.
+
+## Recipe: a value that updates
+
+```cpp
+void loop() {
+  static int n = 0;
+  char buf[12];
+  snprintf(buf, sizeof(buf), "%d", ++n);
+  display.fillRect(0, 40, display.width(), 40, LB_WHITE);  // clear the old value
+  display.setTextSize(4);
+  display.drawString(buf, 10, 44);
+  // Partial refreshes leave a faint ghost that builds up; wipe it now and then.
+  display.flush(n % 30 == 0 ? LB_FLUSH_FULL : LB_FLUSH_PARTIAL);
+  delay(1000);
+}
+```
+
+## Recipe: update, then deep-sleep the ESP32
+
+The picture stays on e-paper with no power. Draw, `flush()`, then
+`esp_deep_sleep_start()`. After waking, the first `flush()` is a full one.
