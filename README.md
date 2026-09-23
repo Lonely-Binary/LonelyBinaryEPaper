@@ -23,7 +23,7 @@ is GPL-3.0; this library is MIT.
 
 | Constant | Panel | Resolution | Controller | Full / partial refresh |
 |---|---|---|---|---|
-| `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 2.34 s / 0.68 s |
+| `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 4.2 s / 0.74 s |
 
 The T5 is a board with the panel built in, so its constant carries its pins
 too. It is not sold by Lonely Binary; it is here because it is what the
@@ -51,7 +51,23 @@ void setup() {
 void loop() {}
 ```
 
-See **File ▸ Examples ▸ Lonely Binary EPaper ▸ HelloEPaper**.
+### Examples
+
+**File ▸ Examples ▸ Lonely Binary EPaper**, in order — each one builds on the
+ones before it:
+
+| | |
+|---|---|
+| `00_Hello` | The smallest sketch. Run it first. |
+| `01_PinCheck` | Black, white and a geometry page, each refresh timed and judged. Run it on new hardware. |
+| `02_Text` | Two fonts, scaling, measured alignment, UTF-8. |
+| `03_Shapes` | `draw*` and `fill*`, and grey on a screen that has none. |
+| `04_Rotation` | Portrait and landscape; `width()` and `height()` follow. |
+| `05_Clock` | Partial refresh: HH:MM:SS where the panel has it, HH:MM where it does not. |
+| `06_Icons` | Line icons drawn with shapes, and a bitmap icon. |
+| `07_Chart` | A chart that grows one point per partial refresh. |
+| `08_Dashboard` | Four readings with icons, laid out from the screen size. |
+| `09_DeepSleep` | Draw, then deep-sleep the ESP32; the picture stays with no power. |
 
 ### Three things that are different from a TFT
 
@@ -59,10 +75,11 @@ See **File ▸ Examples ▸ Lonely Binary EPaper ▸ HelloEPaper**.
 RAM (4 KB for the 2.13"), and `flush()` sends it to the panel. Draw the whole
 screen, then flush once.
 
-**`flush()` blocks.** A full refresh takes 2.3 seconds on the T5, and the whole
-screen flashes black and white while it runs. That is normal for e-paper.
+**`flush()` blocks.** A full refresh takes about 4 seconds on the T5, and the whole
+screen flashes black and white while it runs. That is normal for e-paper. The
+time moves with the temperature: the panel picks its waveform by it.
 
-**Partial refresh is faster and does not flash** — 0.68 s on the T5:
+**Partial refresh is faster and does not flash** — 0.74 s on the T5:
 
 ```cpp
 display.flush(LB_FLUSH_PARTIAL);

@@ -36,7 +36,7 @@ None of that applies here.
 
 | Constant | Board / panel | Resolution (as it starts) | Full / partial |
 |---|---|---|---|
-| `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), SSD1680 | 250 x 122, landscape | 2.34 s / 0.68 s |
+| `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), SSD1680 | 250 x 122, landscape | 4.2 s / 0.74 s |
 
 ## The whole API
 
@@ -51,7 +51,7 @@ void setup() {
   display.setTextColor(LB_BLACK);
   display.setTextSize(2);
   display.drawString("Hello", 10, 10);
-  display.flush();                    // full refresh, ~2.3 s, blocks
+  display.flush();                    // full refresh, ~4 s, blocks
 }
 ```
 
@@ -59,7 +59,7 @@ void setup() {
 |---|---|
 | `begin()` | Framebuffer, SPI, clear to white, panel rotation. Does not refresh. |
 | `flush()` | Full refresh. Blocks until done. The screen flashes; that is normal. |
-| `flush(LB_FLUSH_PARTIAL)` | Partial refresh, ~0.7 s, no flash. Falls back to full on the first refresh and after `sleep()`. |
+| `flush(LB_FLUSH_PARTIAL)` | Partial refresh, ~0.75 s, no flash. Falls back to full on the first refresh and after `sleep()`. |
 | `lastRefreshMs()`, `lastWasPartial()` | How the last flush went. `-1` = BUSY timeout. |
 | `sleep()` | The next refresh will be full. The panel already sleeps between refreshes. |
 | `setRotation(0..3)`, `width()`, `height()` | Software rotation. |
