@@ -9,7 +9,7 @@ constexpr lb_color_t LB_EPDPanel::kInks[2];
 // contract says (D4); lastWasPartial() reports which one ran.
 void LB_EPDPanel::flush(lb_flush_t mode) {
   if (!_epd || !_fb) return;
-  if (mode == LB_FLUSH_PARTIAL && _epd->partialReady()) {
+  if (mode == LB_FLUSH_PARTIAL && _partial && _epd->partialReady()) {
     _lastMs = _epd->refreshPartial(_fb, _stride);
     _lastWasPartial = true;
   } else {
@@ -41,6 +41,7 @@ bool LB_EPaper::begin() {
   _w = _panel->width;
   _h = _panel->height;
   _stride = (_w + 7) / 8;
+  _partial = _panel->partialMs > 0;
   const size_t bytes = _stride * _h;
   _fb = (uint8_t *)malloc(bytes);
   if (!_fb) {
@@ -67,8 +68,11 @@ void LB_EPaper::printInfo(Print &out) const {
   out.printf("Controller : %s\n", "SSD1680");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",
              width(), height(), _panel->width, _panel->height, rotation());
-  out.printf("Refresh    : full ~%u ms, partial ~%u ms (measured)\n",
-             _panel->fullMs, _panel->partialMs);
+  if (_panel->partialMs)
+    out.printf("Refresh    : full ~%u ms, partial ~%u ms (measured)\n",
+               _panel->fullMs, _panel->partialMs);
+  else
+    out.printf("Refresh    : full ~%u ms, no partial refresh\n", _panel->fullMs);
   out.printf("Pins       : CS=%d DC=%d RST=%d BUSY=%d SCK=%d MOSI=%d%s\n",
              _wiring.cs, _wiring.dc, _wiring.rst, _wiring.busy, _wiring.sclk,
              _wiring.mosi, _customWiring ? "  (custom wiring)" : "");

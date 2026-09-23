@@ -49,7 +49,9 @@ public:
   uint16_t paletteSize() const override { return 2; }
   const lb_color_t *palette() const override { return kInks; }
 
-  bool supportsPartial() const override { return true; }
+  /* Per panel: black-and-white panels have partial refresh, colour ones do
+   * not (every refresh runs the whole colour waveform). */
+  bool supportsPartial() const override { return _partial; }
   void flush(lb_flush_t mode = LB_FLUSH_FULL) override;
   void sleep() override;
 
@@ -60,6 +62,7 @@ protected:
   uint32_t _stride = 0;
   long _lastMs = 0;
   bool _lastWasPartial = false;
+  bool _partial = false;
 
 private:
   static constexpr lb_color_t kInks[2] = {LB_BLACK, LB_WHITE};

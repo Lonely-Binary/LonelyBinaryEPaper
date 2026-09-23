@@ -42,6 +42,7 @@ static const uint8_t SSD1680_RAM_X_RANGE = 0x44;
 static const uint8_t SSD1680_RAM_Y_RANGE = 0x45;
 static const uint8_t SSD1680_RAM_X_COUNTER = 0x4E;
 static const uint8_t SSD1680_RAM_Y_COUNTER = 0x4F;
+static const uint8_t SSD1680_TEMP_SENSOR = 0x18;
 
 // Set the RAM window to exactly the frame we send, instead of trusting the
 // power-on defaults.
@@ -143,6 +144,16 @@ long LB_EPD::waitBusy(uint32_t timeoutMs) {
 }
 
 void LB_EPD::setWindow(uint32_t stride) {
+  // The built-in temperature sensor, not an external one. SSD1680 picks the
+  // refresh waveform by temperature, and its default is to read a sensor on
+  // its I2C pins - which the T5 does not have. With the reading it got
+  // instead, the waveform was too weak: an old screen was not wiped (each new
+  // one was drawn on top of the last), solid black came out speckled, and a
+  // second refresh in a row came out faint. The vendor sample for the DKE
+  // panel does not send this, so its OTP presumably defaults to internal.
+  cmd(SSD1680_TEMP_SENSOR);
+  dat(0x80);
+
   const uint16_t lastRow = _panel->height - 1;
   cmd(SSD1680_DRIVER_OUTPUT);  // gate count - 1, then scan order (default)
   dat(lastRow & 0xFF);

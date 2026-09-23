@@ -30,7 +30,7 @@ struct LB_EPDPanelDef {
   uint8_t       rotation;     // how the canvas starts: the way the panel is held
   bool          mirrorGate;   // default scan runs the long axis backwards
   uint16_t      fullMs;       // measured; for timeouts and printInfo()
-  uint16_t      partialMs;
+  uint16_t      partialMs;    // 0 = the panel has no partial refresh (colour panels)
   const LB_EPDWiring *wiring; // fixed wiring of a board with the panel on it
 };
 
@@ -50,13 +50,16 @@ struct LB_EPDPanelDef {
 static const LB_EPDWiring LB_WIRING_LILYGO_T5 = {5, 17, 16, 4, 18, 23, LB_EPD_SPI_HOST};
 
 static const LB_EPDPanelDef LB_EPD_PANELS[] = {
-  /* DEPG0213BN (DKE), SSD1680, 122 x 250. Measured on a T5 (2026-09-24):
-   * full 2340 ms, partial 679 ms, both steady to the millisecond over runs.
+  /* DEPG0213BN (DKE), SSD1680, 122 x 250. Measured on a T5 (2026-09-24),
+   * room temperature, internal temperature sensor: full 4189 ms, partial
+   * 742 ms (one of ~60 was 863), steady to the millisecond over runs. The
+   * refresh time follows the temperature - the controller picks the
+   * waveform by it - so expect it to move with the weather.
    * With the scan order set explicitly (LB_EPD.cpp, setWindow) the long axis
    * needs no mirroring; the QC rig's "mirrored long axis" was a property of
    * the power-on defaults. Rotation 1 = landscape, text along the long side. */
   {"lilygo_t5_213", "LilyGO T5 2.13 inch", LB_EPD_SSD1680, 122, 250, 1,
-   false, 2340, 679, &LB_WIRING_LILYGO_T5},
+   false, 4189, 742, &LB_WIRING_LILYGO_T5},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
