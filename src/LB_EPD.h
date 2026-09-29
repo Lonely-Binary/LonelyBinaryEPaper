@@ -62,5 +62,6 @@ private:
   void cursorSSD1677();
   long refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshUC8176(const uint8_t *bw, uint32_t stride);
+  long refreshUC8159(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long waitBusy(uint32_t timeoutMs);
 };

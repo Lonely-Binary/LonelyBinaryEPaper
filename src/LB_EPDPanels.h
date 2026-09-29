@@ -15,6 +15,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_SSD1677,   // Solomon SSD1677, large panels (7.5" 880 x 528): BUSY high = busy
   LB_EPD_UC8179,    // UltraChip UC8179 (7.5" 800 x 480): BUSY LOW = busy
   LB_EPD_UC8176,    // UltraChip UC8176 (4.2" 400 x 300, black and white): BUSY LOW = busy
+  LB_EPD_UC8159,    // UltraChip UC8159 (7.5" 640 x 384 three-ink, 4 bits a pixel): BUSY LOW = busy
 };
 
 /* The pins. A board with the panel built in carries its own; a bare panel on
@@ -74,12 +75,9 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
   {"hink_e0213a22", "HINK-E0213A22 2.13 inch", LB_EPD_SSD1680, 122, 250, 1,
    false, 3703, 661, 2, &LB_WIRING_LILYGO_T5},
 
-  /* !! UNVERIFIED - the two 7.5" entries below have not drawn a pixel yet !!
-   * Both answered on the bench (BUSY behaves as each controller's does) but
-   * neither panel moved: the HINK one is believed dead, and the HED one's
-   * refresh ends after 36 ms whatever it is sent - no drive voltage, most
-   * likely the adapter. Kept so the next panel can be tried in one line; not
-   * in the README until one works.
+  /* !! UNVERIFIED - the HINK-E075A07 entry has not drawn a pixel: that panel
+   * is believed dead. Kept so the next one can be tried in one line; not in
+   * the README until it works.
    *
    * HINK-E075A07-A0, 7.5" black / white / red, 880 x 528, SSD1677 (the same
    * glass and controller as GoodDisplay GDEH075Z90 and Waveshare's 7.5" HD
@@ -90,13 +88,16 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
   {"hink_e075a07", "HINK-E075A07 7.5 inch BWR", LB_EPD_SSD1677, 880, 528, 0,
    false, 20000, 0, 3, &LB_WIRING_LILYGO_T5},
 
-  /* HED-EPD0750-2BWR (FPC-5904 REV B), 7.5" black / white / red, 800 x 480,
-   * UC8179 - identified on the bench by its BUSY line: idle high, low while
-   * busy, low for ~25 ms after POWER ON (0x04). The same controller and
-   * resolution as Waveshare's 7.5" (B) V2/V3 and GoodDisplay GDEY075Z08.
-   * Sequence from Waveshare's EPD_7in5b_V2.c. No partial refresh. */
-  {"hed_epd0750_bwr", "HED-EPD0750 7.5 inch BWR", LB_EPD_UC8179, 800, 480, 0,
-   false, 20000, 0, 3, &LB_WIRING_LILYGO_T5},
+  /* HED-EPD0750-2BWR (FPC-5904 REV B), 7.5" black / white / red — 640 x 384 on
+   * a UC8159, the generation GoodDisplay sold as GDEW075Z09 and Waveshare as
+   * 7.5" (B) V1. NOT the 800 x 480 UC8179 its size suggests: the UC8179
+   * sequence was accepted and did nothing (refresh "done" in 36 ms). Found by
+   * trying drivers until one refreshed for 16.9 s. Sequence from Waveshare's
+   * EPD_7in5bc.c; pixels are 4 bits each, 0 black, 3 white, 4 red.
+   * Verified 2026-09-29 on a classic ESP32: colours and orientation correct,
+   * BUSY 8375 ms for a full refresh. */
+  {"hed_epd0750_bwr", "HED-EPD0750 7.5 inch BWR", LB_EPD_UC8159, 640, 384, 0,
+   false, 8375, 0, 3, &LB_WIRING_LILYGO_T5},
 
   /* WFT0420CZ15 (ribbon marking), 4.2" black and white, 400 x 300, UC8176 —
    * the panel GoodDisplay sells as GDEW042T2 and Waveshare as 4.2" (V1).
@@ -117,5 +118,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 // (CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); use setWiring() for others.
 #define LB_HINK_E0213A22 (&LB_EPD_PANELS[1]) // 2.13" 250x122, black/white
 #define LB_HINK_E075A07 (&LB_EPD_PANELS[2])  // 7.5" 880x528, black/white/red
-#define LB_HED_EPD0750  (&LB_EPD_PANELS[3])
+#define LB_HED_EPD0750  (&LB_EPD_PANELS[3])  // 7.5" 640x384, black/white/red (UC8159)
 #define LB_WFT0420CZ15  (&LB_EPD_PANELS[4])  // 4.2" 400x300, black/white  // 7.5" 800x480, black/white/red

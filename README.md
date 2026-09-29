@@ -26,6 +26,11 @@ is GPL-3.0; this library is MIT.
 | `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 4.2 s / 0.74 s |
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13", bare panel | 250 × 122 | SSD1680 | 3.7 s / 0.66 s |
 | `LB_WFT0420CZ15` | 4.2" black and white (ribbon WFT0420CZ15; GDEW042T2), bare panel | 400 × 300 | UC8176 | 3.9 s / — |
+| `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
+
+Three-ink panels take `LB_RED` like any other colour: `display.setTextColor(LB_RED)`.
+The frame is kept as two 1-bit planes, so a 7.5" needs 2 × 30 KB — it fits a
+classic ESP32 without PSRAM.
 
 The T5 is a board with the panel built in, so its constant carries its pins
 too. It is not sold by Lonely Binary; it is here because it is what the

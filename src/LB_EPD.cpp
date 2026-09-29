@@ -131,7 +131,7 @@ void LB_EPD::hardwareReset() {
 // See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
 // UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176) ? LOW : HIGH;
+  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159) ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -303,6 +303,7 @@ void LB_EPD::initSSD1677() {
 
 long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
+  if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
   initSSD1677();
@@ -376,6 +377,88 @@ long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t strid
 
   cmd(0x50);  // border floating while asleep, as the vendor does
   dat(0xF7);
+  cmd(0x02);  // power off
+  waitBusy(3000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── UC8159 ─────────────────────────────────────────────────────────────────
+//
+// 7.5" 640 x 384 black / white / red, the generation before UC8179. Waveshare's
+// EPD_7in5bc.c (MIT): power 0x37 0x00, panel 0xCF 0x08, PLL 0x3A, VCOM 0x28,
+// booster C7 CC 15, data interval 0x77, TCON 0x22, flash off (0x65 0x00),
+// resolution, flash mode 0x03 (0xE5). One data stream (0x10), 4 bits a pixel,
+// left pixel in the high nibble: 0 black, 3 white, 4 red. Power on comes
+// after the data, then refresh, then power off and deep sleep.
+
+long LB_EPD::refreshUC8159(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+  const uint16_t w = _panel->width, h = _panel->height;
+
+  hardwareReset();
+  delay(200);
+  waitBusy(3000);
+  cmd(0x01);  // power setting
+  dat(0x37);
+  dat(0x00);
+  cmd(0x00);  // panel setting
+  dat(0xCF);
+  dat(0x08);
+  cmd(0x30);  // PLL
+  dat(0x3A);
+  cmd(0x82);  // VCOM DC
+  dat(0x28);
+  cmd(0x06);  // booster soft start
+  dat(0xC7);
+  dat(0xCC);
+  dat(0x15);
+  cmd(0x50);  // VCOM and data interval
+  dat(0x77);
+  cmd(0x60);  // TCON
+  dat(0x22);
+  cmd(0x65);  // flash control: off
+  dat(0x00);
+  cmd(0x61);  // resolution
+  dat(w >> 8);
+  dat(w & 0xFF);
+  dat(h >> 8);
+  dat(h & 0xFF);
+  cmd(0xE5);  // flash mode
+  dat(0x03);
+
+  // Row by row: two planes in, one nibble stream out, one row buffer.
+  cmd(0x10);
+  uint8_t row[400];
+  const uint16_t outBytes = w / 2;
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint16_t y = 0; y < h; y++) {
+    const uint16_t src = _panel->mirrorGate ? h - 1 - y : y;
+    const uint8_t *b = bw + (size_t)src * stride, *r = red + (size_t)src * stride;
+    for (uint16_t x = 0; x < w; x += 2) {
+      uint8_t out = 0;
+      for (uint8_t k = 0; k < 2; k++) {
+        const uint16_t px = x + k;const uint8_t m = 0x80 >> (px & 7);
+        const uint8_t v = (r[px >> 3] & m) ? 0x4 : (b[px >> 3] & m) ? 0x3 : 0x0;
+        out = (out << 4) | v;
+      }
+      row[x / 2] = out;
+    }
+    _spi->writeBytes(row, outBytes);
+  }
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+
+  cmd(0x04);  // power on
+  delay(100);
+  waitBusy(3000);
+  cmd(0x12);  // display refresh
+  delay(100);
+  const long ms = waitBusy(timeout);
+
   cmd(0x02);  // power off
   waitBusy(3000);
   cmd(0x07);  // deep sleep
