@@ -33,21 +33,30 @@
 #include "LB_EPD.h"
 #include "LB_EPDPanels.h"
 
-/* The LB_Panel adapter: a 1 bpp framebuffer the canvas draws into, and
- * flush() pushes to the panel. Private base of LB_EPaper, like LB_TFTPanel. */
+/* The LB_Panel adapter: a framebuffer the canvas draws into, and flush()
+ * pushes to the panel. Private base of LB_EPaper, like LB_TFTPanel.
+ *
+ * Black-and-white panels: one 1 bpp buffer the canvas writes directly.
+ * Three-ink panels: two 1 bpp planes, black/white and red - the controller's
+ * own two RAMs, so flush() sends them as they are. They are two blocks rather
+ * than one 2 bpp buffer because on a classic ESP32 without PSRAM there is no
+ * single free block of 116 KB for a 7.5" panel, and there are two of 58 KB.
+ * The canvas reaches them through writeSpan() (buffer() is nullptr). */
 class LB_EPDPanel : public LB_Panel
 {
 public:
   int16_t panelWidth() const override { return _w; }
   int16_t panelHeight() const override { return _h; }
-  lb_format_t format() const override { return LB_FMT_PAL1; }
-  uint8_t *buffer() const override { return _fb; }
+  lb_format_t format() const override { return _red ? LB_FMT_PAL2 : LB_FMT_PAL1; }
+  uint8_t *buffer() const override { return _red ? nullptr : _fb; }
   uint32_t stride() const override { return _stride; }
 
   /* Index 0 is black and 1 white, because that is what the controller's RAM
-   * means by a 0 and a 1 - so the buffer goes to the panel as it is. */
-  uint16_t paletteSize() const override { return 2; }
+   * means by a 0 and a 1 - so the buffer goes to the panel as it is. 2 is red
+   * on a three-ink panel. Fixed inks: setPaletteColor() refuses. */
+  uint16_t paletteSize() const override { return _red ? 3 : 2; }
   const lb_color_t *palette() const override { return kInks; }
+  void writeSpan(int16_t x, int16_t y, int16_t w, lb_color_t index) override;
 
   /* Per panel: black-and-white panels have partial refresh, colour ones do
    * not (every refresh runs the whole colour waveform). */
@@ -57,7 +66,8 @@ public:
 
 protected:
   LB_EPD *_epd = nullptr;
-  uint8_t *_fb = nullptr;
+  uint8_t *_fb = nullptr;   // black/white: 1 = white
+  uint8_t *_red = nullptr;  // three-ink panels only: 1 = red
   int16_t _w = 0, _h = 0;
   uint32_t _stride = 0;
   long _lastMs = 0;
@@ -65,7 +75,7 @@ protected:
   bool _partial = false;
 
 private:
-  static constexpr lb_color_t kInks[2] = {LB_BLACK, LB_WHITE};
+  static constexpr lb_color_t kInks[3] = {LB_BLACK, LB_WHITE, LB_RED};
 };
 
 class LB_EPaper : private LB_EPDPanel, public LB_Canvas {
@@ -87,7 +97,8 @@ class LB_EPaper : private LB_EPDPanel, public LB_Canvas {
   //   LB_EPDWiring pins = *LB_LILYGO_T5_213->wiring;  pins.busy = 19;
   void setWiring(const LB_EPDWiring &wiring);
 
-  /* Allocate the framebuffer (width x height / 8 bytes: 4 KB for a 2.13"),
+  /* Allocate the framebuffer (width x height / 8 bytes: 4 KB for a 2.13";
+   * twice that on a three-ink panel: 2 x 58 KB for the 7.5"),
    * start SPI, clear the canvas to white and set the panel's rotation.
    * Does not touch the screen; the first flush() does. */
   bool begin();

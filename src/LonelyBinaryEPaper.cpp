@@ -1,6 +1,6 @@
 #include "LonelyBinaryEPaper.h"
 
-constexpr lb_color_t LB_EPDPanel::kInks[2];
+constexpr lb_color_t LB_EPDPanel::kInks[3];
 
 // ─── LB_EPDPanel ────────────────────────────────────────────────────────────
 
@@ -9,6 +9,11 @@ constexpr lb_color_t LB_EPDPanel::kInks[2];
 // contract says (D4); lastWasPartial() reports which one ran.
 void LB_EPDPanel::flush(lb_flush_t mode) {
   if (!_epd || !_fb) return;
+  if (_red) {
+    _lastMs = _epd->refreshColour(_fb, _red, _stride);
+    _lastWasPartial = false;
+    return;
+  }
   if (mode == LB_FLUSH_PARTIAL && _partial && _epd->partialReady()) {
     _lastMs = _epd->refreshPartial(_fb, _stride);
     _lastWasPartial = true;
@@ -16,6 +21,25 @@ void LB_EPDPanel::flush(lb_flush_t mode) {
     _lastMs = _epd->refreshFull(_fb, _stride);
     _lastWasPartial = false;
   }
+}
+
+// Three-ink panels only (the others hand the canvas their buffer). Each ink is
+// a pair of bits: black (0, 0), white (1, 0), red (-, 1).
+static void setBits(uint8_t *row, int16_t x, int16_t w, bool on) {
+  for (int16_t i = x; i < x + w; i++) {
+    const uint8_t m = (uint8_t)(0x80 >> (i & 7));
+    if (on) row[i >> 3] |= m; else row[i >> 3] &= (uint8_t)~m;
+  }
+}
+
+void LB_EPDPanel::writeSpan(int16_t x, int16_t y, int16_t w, lb_color_t index) {
+  if (!_red || y < 0 || y >= _h) return;
+  if (x < 0) { w += x; x = 0; }
+  if (x + w > _w) w = _w - x;
+  if (w <= 0) return;
+  const size_t off = (size_t)y * _stride;
+  setBits(_fb + off, x, w, index != 0);
+  setBits(_red + off, x, w, index == 2);
 }
 
 void LB_EPDPanel::sleep() {
@@ -27,6 +51,7 @@ void LB_EPDPanel::sleep() {
 LB_EPaper::~LB_EPaper() {
   delete _epd;
   free(_fb);
+  free(_red);
 }
 
 void LB_EPaper::setWiring(const LB_EPDWiring &wiring) {
@@ -49,6 +74,16 @@ bool LB_EPaper::begin() {
     return false;
   }
   memset(_fb, 0xFF, bytes);  // white
+  if (_panel->inks >= 3) {
+    _red = (uint8_t *)malloc(bytes);
+    if (!_red) {
+      Serial.printf("[LB_EPaper] no room for a %u byte red plane.\n", (unsigned)bytes);
+      free(_fb);
+      _fb = nullptr;
+      return false;
+    }
+    memset(_red, 0x00, bytes);  // no red
+  }
 
   _epd = new LB_EPD(_panel, _wiring);
   // 4 MHz: what the QC rig ran every panel at. An e-paper frame is a few KB
@@ -65,7 +100,10 @@ bool LB_EPaper::begin() {
 void LB_EPaper::printInfo(Print &out) const {
   out.println(F("---- Lonely Binary EPaper ----"));
   out.printf("Panel      : %s (%s)\n", _panel->name, _panel->id);
-  out.printf("Controller : %s\n", "SSD1680");
+  out.printf("Controller : %s, %s\n",
+             _panel->driver == LB_EPD_UC8179    ? "UC8179"
+             : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
+             _panel->inks >= 3 ? "black / white / red" : "black / white");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",
              width(), height(), _panel->width, _panel->height, rotation());
   if (_panel->partialMs)

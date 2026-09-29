@@ -128,9 +128,10 @@ void LB_EPD::hardwareReset() {
   delay(20);
 }
 
-// See the note at the top of LB_EPD.h. SSD1680: BUSY high = busy.
+// See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
+// UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = HIGH;
+  const int busy = _panel->driver == LB_EPD_UC8179 ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -221,6 +222,164 @@ long LB_EPD::refreshPartial(const uint8_t *frame, uint32_t stride) {
   cmd(SSD1680_DEEP_SLEEP);
   dat(0x01);
   if (ms < 0) _partialReady = false;
+  return ms;
+}
+
+// ─── SSD1677 ────────────────────────────────────────────────────────────────
+//
+// Waveshare's EPD_7in5b_HD.c (the 880 x 528 black / white / red panel, sold
+// by GoodDisplay as GDEH075Z90 and fitted to HINK-E075A07), step for step:
+//
+//   reset, SWRESET, auto-fill both RAMs (0x46 / 0x47), booster soft start,
+//   688 gates scanned bottom-up, X increment / Y decrement with Y starting at
+//   687, internal temperature sensor, load the waveform (0x22 0xB1), then
+//   0x24 = black/white (1 = white) and 0x26 = red (1 = red), 0x22 0xC7, 0x20.
+//
+// X addresses are in PIXELS on this controller (0..879), not bytes as on the
+// SSD1680. The 688 gate lines and the Y range starting at 687 are the vendor's
+// values for a 528-row panel; kept as they are until the panel says otherwise.
+
+static const uint16_t SSD1677_GATES = 688;
+
+void LB_EPD::cursorSSD1677() {
+  cmd(SSD1680_RAM_X_COUNTER);
+  dat(0x00);
+  dat(0x00);
+  cmd(SSD1680_RAM_Y_COUNTER);
+  dat((SSD1677_GATES - 1) & 0xFF);
+  dat((SSD1677_GATES - 1) >> 8);
+}
+
+void LB_EPD::initSSD1677() {
+  hardwareReset();
+  waitBusy(3000);
+  cmd(SSD1680_SWRESET);
+  waitBusy(3000);
+
+  cmd(0x46);  // auto-write red RAM
+  dat(0xF7);
+  waitBusy(3000);
+  cmd(0x47);  // auto-write black/white RAM
+  dat(0xF7);
+  waitBusy(3000);
+
+  cmd(0x0C);  // booster soft start
+  dat(0xAE);
+  dat(0xC7);
+  dat(0xC3);
+  dat(0xC0);
+  dat(0x40);
+
+  cmd(SSD1680_DRIVER_OUTPUT);  // 688 gates, scanned bottom-up
+  dat((SSD1677_GATES - 1) & 0xFF);
+  dat((SSD1677_GATES - 1) >> 8);
+  dat(0x01);
+  cmd(SSD1680_DATA_ENTRY);     // X increment, Y decrement
+  dat(0x01);
+
+  const uint16_t lastX = _panel->width - 1;
+  cmd(SSD1680_RAM_X_RANGE);    // in pixels
+  dat(0x00);
+  dat(0x00);
+  dat(lastX & 0xFF);
+  dat(lastX >> 8);
+  cmd(SSD1680_RAM_Y_RANGE);    // from the top gate down
+  dat((SSD1677_GATES - 1) & 0xFF);
+  dat((SSD1677_GATES - 1) >> 8);
+  dat(0x00);
+  dat(0x00);
+
+  cmd(SSD1680_BORDER);         // border waveform
+  dat(0x01);
+  cmd(SSD1680_TEMP_SENSOR);    // internal sensor
+  dat(0x80);
+  cmd(SSD1680_UPDATE_CTRL2);   // load temperature and waveform
+  dat(0xB1);
+  cmd(SSD1680_ACTIVATE);
+  waitBusy(3000);
+  cursorSSD1677();
+}
+
+long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
+  if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+
+  initSSD1677();
+  sendFrame(SSD1680_RAM_BW, bw, stride);
+  cursorSSD1677();
+  sendFrame(SSD1680_RAM_PREV, red, stride);  // on a colour panel, 0x26 is red
+
+  cmd(SSD1680_UPDATE_CTRL2);
+  dat(0xC7);
+  cmd(SSD1680_ACTIVATE);
+  const long ms = waitBusy(timeout);
+
+  cmd(SSD1680_DEEP_SLEEP);
+  dat(0x01);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── UC8179 ─────────────────────────────────────────────────────────────────
+//
+// Waveshare's EPD_7in5b_V2.c (800 x 480 black / white / red), step for step:
+//
+//   reset, power setting (0x01), booster soft start (0x06), POWER ON (0x04)
+//   and wait, panel setting 0x00 0x0F (black/white/red, waveform from OTP),
+//   resolution 800 x 480 (0x61), 0x15 0x00, VCOM / data interval (0x50 0x11
+//   0x07), TCON (0x60 0x22); then 0x10 = black/white (1 = white), 0x13 = red
+//   (1 = red), DISPLAY REFRESH (0x12), and power off + deep sleep (0x07 0xA5).
+//
+// A completely different command set from the Solomon chips; only SPI, reset
+// and the two 1 bpp planes are shared. A sleeping UC8179 wakes only on reset.
+
+long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+
+  hardwareReset();
+  waitBusy(3000);
+  cmd(0x01);  // power setting: VGH/VGL +-20 V, VDH/VDL +-15 V
+  dat(0x07);
+  dat(0x07);
+  dat(0x3F);
+  dat(0x3F);
+  cmd(0x06);  // booster soft start
+  dat(0x17);
+  dat(0x17);
+  dat(0x28);
+  dat(0x17);
+  cmd(0x04);  // power on
+  delay(100);
+  waitBusy(3000);
+  cmd(0x00);  // panel setting: black/white/red, waveform from OTP
+  dat(0x0F);
+  cmd(0x61);  // resolution
+  dat(_panel->width >> 8);
+  dat(_panel->width & 0xFF);
+  dat(_panel->height >> 8);
+  dat(_panel->height & 0xFF);
+  cmd(0x15);  // dual SPI off
+  dat(0x00);
+  cmd(0x50);  // VCOM and data interval
+  dat(0x11);
+  dat(0x07);
+  cmd(0x60);  // TCON
+  dat(0x22);
+
+  sendFrame(0x10, bw, stride);
+  sendFrame(0x13, red, stride);
+
+  cmd(0x12);  // display refresh
+  delay(10);  // the vendor: at least 200 us before BUSY means anything
+  const long ms = waitBusy(timeout);
+
+  cmd(0x50);  // border floating while asleep, as the vendor does
+  dat(0xF7);
+  cmd(0x02);  // power off
+  waitBusy(3000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
   return ms;
 }
 

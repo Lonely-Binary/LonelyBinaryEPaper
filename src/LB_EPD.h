@@ -35,6 +35,11 @@ public:
    * full refresh and before sleep(); the caller checks partialReady(). */
   long refreshPartial(const uint8_t *frame, uint32_t stride);
 
+  /* Three-ink panels: `bw` is 1 = white / 0 = black, `red` is 1 = red (red
+   * wins over black). Both native orientation, `stride` bytes a row. Always a
+   * full refresh. Returns the refresh time in ms, or -1 on a BUSY timeout. */
+  long refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride);
+
   bool partialReady() const { return _partialReady; }
 
   /* The panel sleeps after every refresh anyway; this only means the next
@@ -53,5 +58,8 @@ private:
   void sendFrame(uint8_t ramCmd, const uint8_t *frame, uint32_t stride);
   void hardwareReset();
   void setWindow(uint32_t stride);
+  void initSSD1677();
+  void cursorSSD1677();
+  long refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long waitBusy(uint32_t timeoutMs);
 };

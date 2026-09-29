@@ -24,10 +24,13 @@ is GPL-3.0; this library is MIT.
 | Constant | Panel | Resolution | Controller | Full / partial refresh |
 |---|---|---|---|---|
 | `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 4.2 s / 0.74 s |
+| `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13", bare panel | 250 × 122 | SSD1680 | 3.7 s / 0.66 s |
 
 The T5 is a board with the panel built in, so its constant carries its pins
 too. It is not sold by Lonely Binary; it is here because it is what the
-library was first proven on. Lonely Binary's own panels will join this table.
+library was first proven on. A bare panel's constant uses the same pins
+(CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); wire it differently and pass
+your pins with `setWiring()`. Lonely Binary's own panels will join this table.
 
 ---
 
