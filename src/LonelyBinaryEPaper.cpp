@@ -102,6 +102,7 @@ void LB_EPaper::printInfo(Print &out) const {
   out.printf("Panel      : %s (%s)\n", _panel->name, _panel->id);
   out.printf("Controller : %s, %s\n",
              _panel->driver == LB_EPD_UC8179    ? "UC8179"
+             : _panel->driver == LB_EPD_UC8176 ? "UC8176"
              : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
              _panel->inks >= 3 ? "black / white / red" : "black / white");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",

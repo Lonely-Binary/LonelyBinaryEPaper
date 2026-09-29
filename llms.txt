@@ -38,6 +38,7 @@ None of that applies here.
 |---|---|---|---|
 | `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), SSD1680 | 250 x 122, landscape | 4.2 s / 0.74 s |
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13" bare panel, SSD1680, T5 pins | 250 x 122, landscape | 3.7 s / 0.66 s |
+| `LB_WFT0420CZ15` | 4.2" black/white bare panel (WFT0420CZ15), UC8176, T5 pins | 400 x 300, landscape | 3.9 s / none |
 
 ## The whole API
 

@@ -131,7 +131,7 @@ void LB_EPD::hardwareReset() {
 // See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
 // UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = _panel->driver == LB_EPD_UC8179 ? LOW : HIGH;
+  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176) ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -178,6 +178,7 @@ void LB_EPD::setWindow(uint32_t stride) {
 }
 
 long LB_EPD::refreshFull(const uint8_t *frame, uint32_t stride) {
+  if (_panel->driver == LB_EPD_UC8176) return refreshUC8176(frame, stride);
   // A timeout well past the measured time: long enough for a cold panel,
   // short enough that a dead one does not hang the sketch for a minute.
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
@@ -374,6 +375,64 @@ long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t strid
   const long ms = waitBusy(timeout);
 
   cmd(0x50);  // border floating while asleep, as the vendor does
+  dat(0xF7);
+  cmd(0x02);  // power off
+  waitBusy(3000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── UC8176 ─────────────────────────────────────────────────────────────────
+//
+// 4.2" 400 x 300 black and white (GoodDisplay GDEW042T2, Waveshare 4.2" V1,
+// ribbon WFT0420CZ15). Waveshare's EPD_4in2.c for the power, booster, PLL,
+// resolution and VCOM values; the waveform is the panel's own OTP one (panel
+// setting 0x1F, "BWOTP" in their notes) rather than their host-loaded LUTs.
+// 0x10 is the old frame and 0x13 the new; both get the new frame, so the
+// full-refresh waveform drives every pixel from a known state.
+
+long LB_EPD::refreshUC8176(const uint8_t *bw, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+
+  hardwareReset();
+  delay(200);  // UC81xx wants time after reset before BUSY means anything (QC notes)
+  waitBusy(3000);
+  cmd(0x01);  // power setting
+  dat(0x03);
+  dat(0x00);
+  dat(0x2B);
+  dat(0x2B);
+  cmd(0x06);  // booster soft start
+  dat(0x17);
+  dat(0x17);
+  dat(0x17);
+  cmd(0x04);  // power on
+  delay(100);
+  waitBusy(3000);
+  cmd(0x00);  // panel setting: black/white, waveform from OTP
+  dat(0x1F);
+  cmd(0x30);  // PLL, 50 Hz
+  dat(0x3C);
+  cmd(0x61);  // resolution
+  dat(_panel->width >> 8);
+  dat(_panel->width & 0xFF);
+  dat(_panel->height >> 8);
+  dat(_panel->height & 0xFF);
+  cmd(0x82);  // VCOM DC
+  dat(0x12);
+  cmd(0x50);  // VCOM and data interval
+  dat(0x97);
+
+  sendFrame(0x10, bw, stride);
+  sendFrame(0x13, bw, stride);
+
+  cmd(0x12);  // display refresh
+  delay(10);
+  const long ms = waitBusy(timeout);
+
+  cmd(0x50);
   dat(0xF7);
   cmd(0x02);  // power off
   waitBusy(3000);

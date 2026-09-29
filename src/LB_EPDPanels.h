@@ -14,6 +14,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_SSD1680,   // Solomon SSD1680 / SSD168x black-and-white: BUSY high = busy
   LB_EPD_SSD1677,   // Solomon SSD1677, large panels (7.5" 880 x 528): BUSY high = busy
   LB_EPD_UC8179,    // UltraChip UC8179 (7.5" 800 x 480): BUSY LOW = busy
+  LB_EPD_UC8176,    // UltraChip UC8176 (4.2" 400 x 300, black and white): BUSY LOW = busy
 };
 
 /* The pins. A board with the panel built in carries its own; a bare panel on
@@ -96,6 +97,14 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * Sequence from Waveshare's EPD_7in5b_V2.c. No partial refresh. */
   {"hed_epd0750_bwr", "HED-EPD0750 7.5 inch BWR", LB_EPD_UC8179, 800, 480, 0,
    false, 20000, 0, 3, &LB_WIRING_LILYGO_T5},
+
+  /* WFT0420CZ15 (ribbon marking), 4.2" black and white, 400 x 300, UC8176 —
+   * the panel GoodDisplay sells as GDEW042T2 and Waveshare as 4.2" (V1).
+   * Waveform from the panel's OTP (panel setting 0x1F), not host LUTs.
+   * Verified 2026-09-29 on a classic ESP32: correct picture and orientation,
+   * BUSY 3913 ms for a full refresh. No partial refresh yet (it needs host LUTs). */
+  {"wft0420cz15", "WFT0420CZ15 4.2 inch", LB_EPD_UC8176, 400, 300, 0,
+   false, 3913, 0, 2, &LB_WIRING_LILYGO_T5},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -108,4 +117,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 // (CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); use setWiring() for others.
 #define LB_HINK_E0213A22 (&LB_EPD_PANELS[1]) // 2.13" 250x122, black/white
 #define LB_HINK_E075A07 (&LB_EPD_PANELS[2])  // 7.5" 880x528, black/white/red
-#define LB_HED_EPD0750  (&LB_EPD_PANELS[3])  // 7.5" 800x480, black/white/red
+#define LB_HED_EPD0750  (&LB_EPD_PANELS[3])
+#define LB_WFT0420CZ15  (&LB_EPD_PANELS[4])  // 4.2" 400x300, black/white  // 7.5" 800x480, black/white/red
