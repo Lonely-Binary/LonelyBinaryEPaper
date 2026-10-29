@@ -57,6 +57,10 @@ struct LB_EPDPanelDef {
 
 static const LB_EPDWiring LB_WIRING_LILYGO_T5 = {5, 17, 16, 4, 18, 23, LB_EPD_SPI_HOST};
 
+/* Lonely Binary's own panels on an ESP32-S3 (FSPI): CS 10, DC 2, RST 42,
+ * BUSY 41, SCK 12, MOSI 11. */
+static const LB_EPDWiring LB_WIRING_LB_S3 = {10, 2, 42, 41, 12, 11, LB_EPD_SPI_HOST};
+
 static const LB_EPDPanelDef LB_EPD_PANELS[] = {
   /* DEPG0213BN (DKE), SSD1680, 122 x 250. Measured on a T5 (2026-09-24),
    * room temperature, internal temperature sensor: full 4189 ms, partial
@@ -120,7 +124,17 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * Verified 2026-10-29 on an ESP32-S3: colours, red ink and orientation
    * (rotation 3, FPC on the right) are correct. */
   {"lb_437_bwr", "LB 4.37 inch BWR", LB_EPD_UC81XX_Y, 176, 480, 3,
-   false, 13750, 0, 3, false, &LB_WIRING_LILYGO_T5},
+   false, 13750, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_213_BWR - 2.13" black / white / red, 122 x 250, SSD1680 three-colour
+   * (the glass GoodDisplay sells as GDEY0213Z98). Same controller and geometry
+   * as the black-and-white 2.13" entries; the red plane is RAM 0x26 (1 = red),
+   * the border and display-update control are set for colour, and the refresh
+   * runs the whole three-colour waveform. No partial refresh.
+   * Verified 2026-10-29 on an ESP32-S3: colours and orientation correct,
+   * BUSY 13978 ms for any content (whole flush 14268 ms). See docs/LB_213_BWR.md. */
+  {"lb_213_bwr", "LB 2.13 inch BWR", LB_EPD_SSD1680, 122, 250, 1,
+   false, 13978, 0, 3, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -139,3 +153,4 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 // ── Lonely Binary's own panels ───────────────────────────────
 // Named LB_<size>_<inks>: size without the decimal point, then the inks.
 #define LB_437_BWR (&LB_EPD_PANELS[5])        // 4.37" 480x176, black/white/red
+#define LB_213_BWR (&LB_EPD_PANELS[6])        // 2.13" 250x122, black/white/red
