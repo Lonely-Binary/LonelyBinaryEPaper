@@ -16,6 +16,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_UC8179,    // UltraChip UC8179 (7.5" 800 x 480): BUSY LOW = busy
   LB_EPD_UC8176,    // UltraChip UC8176 (4.2" 400 x 300, black and white): BUSY LOW = busy
   LB_EPD_UC8159,    // UltraChip UC8159 (7.5" 640 x 384 three-ink, 4 bits a pixel): BUSY LOW = busy
+  LB_EPD_SSD1682,   // Solomon SSD1682, three-colour (1.54" 152 x 152): BUSY high = busy
   LB_EPD_UC81XX_Y,  // UC81xx-family black / white / yellow (4.37" 176 x 480): BUSY LOW = busy, no init registers
 };
 
@@ -135,6 +136,15 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * BUSY 13978 ms for any content (whole flush 14268 ms). See docs/LB_213_BWR.md. */
   {"lb_213_bwr", "LB 2.13 inch BWR", LB_EPD_SSD1680, 122, 250, 1,
    false, 13978, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_154_BWR - 1.54" black / white / red, 152 x 152 (ribbon HINK-E0154A34),
+   * SSD1682 family: the command set of the 200 x 200 three-colour panels with a
+   * 152-gate scan. Rotation 1: a quarter turn right of the native
+   * orientation (native, rotation 0, reads upright with the FPC at the bottom). Red plane is RAM 0x26 (1 = red). No partial refresh.
+   * Verified 2026-10-29 on an ESP32-S3: colours and orientation correct,
+   * BUSY 16156 ms for any content (whole flush 16441 ms). See docs/LB_154_BWR.md. */
+  {"lb_154_bwr", "LB 1.54 inch BWR", LB_EPD_SSD1682, 152, 152, 1,
+   false, 16156, 0, 3, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -154,3 +164,4 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 // Named LB_<size>_<inks>: size without the decimal point, then the inks.
 #define LB_437_BWR (&LB_EPD_PANELS[5])        // 4.37" 480x176, black/white/red
 #define LB_213_BWR (&LB_EPD_PANELS[6])        // 2.13" 250x122, black/white/red
+#define LB_154_BWR (&LB_EPD_PANELS[7])        // 1.54" 152x152, black/white/red

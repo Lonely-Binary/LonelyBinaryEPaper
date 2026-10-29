@@ -243,9 +243,11 @@ long LB_EPD::refreshSSD1680Colour(const uint8_t *bw, const uint8_t *red, uint32_
   setWindow(stride);
   cmd(SSD1680_BORDER);
   dat(0x05);
-  cmd(0x21);
-  dat(0x00);
-  dat(0x80);
+  if (_panel->driver == LB_EPD_SSD1680) {  // SSD1682 (152-gate panels) is left at its default
+    cmd(0x21);
+    dat(0x00);
+    dat(0x80);
+  }
 
   sendFrame(SSD1680_RAM_BW, bw, stride);
   setWindow(stride);
@@ -341,7 +343,7 @@ long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t strid
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
   if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
   if (_panel->driver == LB_EPD_UC81XX_Y) return refreshUC81xxY(bw, red, stride);
-  if (_panel->driver == LB_EPD_SSD1680) return refreshSSD1680Colour(bw, red, stride);
+  if (_panel->driver == LB_EPD_SSD1680 || _panel->driver == LB_EPD_SSD1682) return refreshSSD1680Colour(bw, red, stride);
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
   initSSD1677();
