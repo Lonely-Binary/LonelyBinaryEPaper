@@ -1,6 +1,7 @@
 #include "LonelyBinaryEPaper.h"
 
 constexpr lb_color_t LB_EPDPanel::kInks[3];
+constexpr lb_color_t LB_EPDPanel::kInksY[3];
 
 // ─── LB_EPDPanel ────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ bool LB_EPaper::begin() {
   _h = _panel->height;
   _stride = (_w + 7) / 8;
   _partial = _panel->partialMs > 0;
+  _yellow = _panel->yellow;
   const size_t bytes = _stride * _h;
   _fb = (uint8_t *)malloc(bytes);
   if (!_fb) {
@@ -104,8 +106,9 @@ void LB_EPaper::printInfo(Print &out) const {
              _panel->driver == LB_EPD_UC8179    ? "UC8179"
              : _panel->driver == LB_EPD_UC8176 ? "UC8176"
              : _panel->driver == LB_EPD_UC8159 ? "UC8159"
+             : _panel->driver == LB_EPD_UC81XX_Y ? "UC81xx"
              : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
-             _panel->inks >= 3 ? "black / white / red" : "black / white");
+             _panel->inks >= 3 ? (_panel->yellow ? "black / white / yellow" : "black / white / red") : "black / white");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",
              width(), height(), _panel->width, _panel->height, rotation());
   if (_panel->partialMs)

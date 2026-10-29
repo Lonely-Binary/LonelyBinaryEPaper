@@ -26,6 +26,7 @@ is GPL-3.0; this library is MIT.
 | `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 4.2 s / 0.74 s |
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13", bare panel | 250 × 122 | SSD1680 | 3.7 s / 0.66 s |
 | `LB_WFT0420CZ15` | 4.2" black and white (ribbon WFT0420CZ15; GDEW042T2), bare panel | 400 × 300 | UC8176 | 3.9 s / — |
+| `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
 | `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
 
 Three-ink panels take `LB_RED` like any other colour: `display.setTextColor(LB_RED)`.

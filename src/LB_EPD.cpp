@@ -131,7 +131,7 @@ void LB_EPD::hardwareReset() {
 // See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
 // UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159) ? LOW : HIGH;
+  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159 || _panel->driver == LB_EPD_UC81XX_Y) ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -304,6 +304,7 @@ void LB_EPD::initSSD1677() {
 long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
   if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
+  if (_panel->driver == LB_EPD_UC81XX_Y) return refreshUC81xxY(bw, red, stride);
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
   initSSD1677();
@@ -517,6 +518,64 @@ long LB_EPD::refreshUC8176(const uint8_t *bw, uint32_t stride) {
 
   cmd(0x50);
   dat(0xF7);
+  cmd(0x02);  // power off
+  waitBusy(3000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── UC81xx black / white / yellow (4.37" 176 x 480) ────────────────────────
+//
+// Probed on the panel (QC repository, DEPG0437): no datasheet, no vendor code.
+//   - NO init registers. 0x61 TRES hangs power-on; 0x50 CDI hangs the refresh;
+//     0x00 PSR flips the picture. The OTP configuration is right as it is.
+//   - 0x10 = black/white (1 = white), 0x13 = colour (1 = yellow), then power on
+//     (0x04), refresh (0x12, NO parameter byte), power off (0x02), deep sleep
+//     (0x07 0xA5). BUSY low = busy. A full refresh takes about 25 s.
+//   - The source axis is backwards: each row goes out last byte first and every
+//     byte bit-reversed, or the whole page comes out mirrored.
+
+void LB_EPD::sendPlaneReversed(uint8_t ramCmd, const uint8_t *plane, uint32_t stride) {
+  cmd(ramCmd);
+  uint8_t row[48];  // 176 / 8 = 22 bytes a row
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint16_t y = 0; y < _panel->height; y++) {
+    const uint16_t src = _panel->mirrorGate ? _panel->height - 1 - y : y;
+    const uint8_t *in = plane + (size_t)src * stride;
+    for (uint32_t i = 0; i < stride; i++) {
+      uint8_t b = in[stride - 1 - i];
+      b = (uint8_t)(((b & 0xF0) >> 4) | ((b & 0x0F) << 4));
+      b = (uint8_t)(((b & 0xCC) >> 2) | ((b & 0x33) << 2));
+      b = (uint8_t)(((b & 0xAA) >> 1) | ((b & 0x55) << 1));
+      row[i] = b;
+    }
+    _spi->writeBytes(row, stride);
+  }
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+}
+
+long LB_EPD::refreshUC81xxY(const uint8_t *bw, const uint8_t *colour, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 2;
+
+  // The probe's reset: RST high 20 ms, low 10 ms, high 50 ms.
+  digitalWrite(_w.rst, HIGH);
+  delay(20);
+  digitalWrite(_w.rst, LOW);
+  delay(10);
+  digitalWrite(_w.rst, HIGH);
+  delay(50);
+
+  sendPlaneReversed(0x10, bw, stride);
+  sendPlaneReversed(0x13, colour, stride);
+
+  cmd(0x04);  // power on
+  waitBusy(3000);
+  cmd(0x12);  // display refresh - no parameter
+  const long ms = waitBusy(timeout);
   cmd(0x02);  // power off
   waitBusy(3000);
   cmd(0x07);  // deep sleep

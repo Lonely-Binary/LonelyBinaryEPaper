@@ -55,7 +55,7 @@ public:
    * means by a 0 and a 1 - so the buffer goes to the panel as it is. 2 is red
    * on a three-ink panel. Fixed inks: setPaletteColor() refuses. */
   uint16_t paletteSize() const override { return _red ? 3 : 2; }
-  const lb_color_t *palette() const override { return kInks; }
+  const lb_color_t *palette() const override { return _yellow ? kInksY : kInks; }
   void writeSpan(int16_t x, int16_t y, int16_t w, lb_color_t index) override;
 
   /* Per panel: black-and-white panels have partial refresh, colour ones do
@@ -73,9 +73,11 @@ protected:
   long _lastMs = 0;
   bool _lastWasPartial = false;
   bool _partial = false;
+  bool _yellow = false;  // the third ink is yellow
 
 private:
   static constexpr lb_color_t kInks[3] = {LB_BLACK, LB_WHITE, LB_RED};
+  static constexpr lb_color_t kInksY[3] = {LB_BLACK, LB_WHITE, LB_YELLOW};
 };
 
 class LB_EPaper : private LB_EPDPanel, public LB_Canvas {

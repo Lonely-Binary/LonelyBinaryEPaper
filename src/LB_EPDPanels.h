@@ -16,6 +16,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_UC8179,    // UltraChip UC8179 (7.5" 800 x 480): BUSY LOW = busy
   LB_EPD_UC8176,    // UltraChip UC8176 (4.2" 400 x 300, black and white): BUSY LOW = busy
   LB_EPD_UC8159,    // UltraChip UC8159 (7.5" 640 x 384 three-ink, 4 bits a pixel): BUSY LOW = busy
+  LB_EPD_UC81XX_Y,  // UC81xx-family black / white / yellow (4.37" 176 x 480): BUSY LOW = busy, no init registers
 };
 
 /* The pins. A board with the panel built in carries its own; a bare panel on
@@ -36,7 +37,8 @@ struct LB_EPDPanelDef {
   bool          mirrorGate;   // default scan runs the long axis backwards
   uint16_t      fullMs;       // measured; for timeouts and printInfo()
   uint16_t      partialMs;    // 0 = the panel has no partial refresh (colour panels)
-  uint8_t       inks;         // 2 = black and white; 3 = black, white and red
+  uint8_t       inks;         // 2 = black and white; 3 = black, white and a third ink
+  bool          yellow;       // the third ink is yellow, not red
   const LB_EPDWiring *wiring; // fixed wiring of a board with the panel on it
 };
 
@@ -65,7 +67,7 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * needs no mirroring; the QC rig's "mirrored long axis" was a property of
    * the power-on defaults. Rotation 1 = landscape, text along the long side. */
   {"lilygo_t5_213", "LilyGO T5 2.13 inch", LB_EPD_SSD1680, 122, 250, 1,
-   false, 4189, 742, 2, &LB_WIRING_LILYGO_T5},
+   false, 4189, 742, 2, false, &LB_WIRING_LILYGO_T5},
 
   /* HINK-E0213A22-A0, 2.13" black and white, bare panel on an adapter,
    * wired to a classic ESP32 on the T5's pins. The T5's settings drive it
@@ -73,7 +75,7 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * Measured 2026-09-29, room temperature: full 3703 ms, partial 661 ms
    * (five in a row, all 661). */
   {"hink_e0213a22", "HINK-E0213A22 2.13 inch", LB_EPD_SSD1680, 122, 250, 1,
-   false, 3703, 661, 2, &LB_WIRING_LILYGO_T5},
+   false, 3703, 661, 2, false, &LB_WIRING_LILYGO_T5},
 
   /* !! UNVERIFIED - the HINK-E075A07 entry has not drawn a pixel: that panel
    * is believed dead. Kept so the next one can be tried in one line; not in
@@ -86,7 +88,7 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * partial refresh: every update runs the full three-colour waveform.
    * Landscape at rotation 0 - the source axis is the long one here. */
   {"hink_e075a07", "HINK-E075A07 7.5 inch BWR", LB_EPD_SSD1677, 880, 528, 0,
-   false, 20000, 0, 3, &LB_WIRING_LILYGO_T5},
+   false, 20000, 0, 3, false, &LB_WIRING_LILYGO_T5},
 
   /* HED-EPD0750-2BWR (FPC-5904 REV B), 7.5" black / white / red — 640 x 384 on
    * a UC8159, the generation GoodDisplay sold as GDEW075Z09 and Waveshare as
@@ -97,7 +99,7 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * Verified 2026-09-29 on a classic ESP32: colours and orientation correct,
    * BUSY 8375 ms for a full refresh. */
   {"hed_epd0750_bwr", "HED-EPD0750 7.5 inch BWR", LB_EPD_UC8159, 640, 384, 0,
-   false, 8375, 0, 3, &LB_WIRING_LILYGO_T5},
+   false, 8375, 0, 3, false, &LB_WIRING_LILYGO_T5},
 
   /* WFT0420CZ15 (ribbon marking), 4.2" black and white, 400 x 300, UC8176 —
    * the panel GoodDisplay sells as GDEW042T2 and Waveshare as 4.2" (V1).
@@ -105,7 +107,20 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * Verified 2026-09-29 on a classic ESP32: correct picture and orientation,
    * BUSY 3913 ms for a full refresh. No partial refresh yet (it needs host LUTs). */
   {"wft0420cz15", "WFT0420CZ15 4.2 inch", LB_EPD_UC8176, 400, 300, 0,
-   false, 3913, 0, 2, &LB_WIRING_LILYGO_T5},
+   false, 3913, 0, 2, false, &LB_WIRING_LILYGO_T5},
+
+  /* LB_437_BWR - 4.37" black / white / red, 176 x 480, a UC81xx-family
+   * controller. Measured on an ESP32-S3: BUSY 13750 ms for a full refresh of
+   * any content (whole flush 14040 ms). See docs/LB_437_BWR.md. The init sends NO registers: the panel's OTP has the right
+   * ones, and writing PSR / CDI / TRES either flips the picture or hangs the
+   * refresh. Colour plane polarity is the library's (1 = ink); the source axis
+   * is bit- and byte-reversed (LB_EPD.cpp). No partial refresh. The colour
+   * plane is one ink; QC's README saw it as yellow on its unit, this one shows
+   * red - `yellow` in the table only picks the LB_YELLOW / LB_RED palette.
+   * Verified 2026-10-29 on an ESP32-S3: colours, red ink and orientation
+   * (rotation 3, FPC on the right) are correct. */
+  {"lb_437_bwr", "LB 4.37 inch BWR", LB_EPD_UC81XX_Y, 176, 480, 3,
+   false, 13750, 0, 3, false, &LB_WIRING_LILYGO_T5},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -119,4 +134,8 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_HINK_E0213A22 (&LB_EPD_PANELS[1]) // 2.13" 250x122, black/white
 #define LB_HINK_E075A07 (&LB_EPD_PANELS[2])  // 7.5" 880x528, black/white/red
 #define LB_HED_EPD0750  (&LB_EPD_PANELS[3])  // 7.5" 640x384, black/white/red (UC8159)
-#define LB_WFT0420CZ15  (&LB_EPD_PANELS[4])  // 4.2" 400x300, black/white  // 7.5" 800x480, black/white/red
+#define LB_WFT0420CZ15  (&LB_EPD_PANELS[4])  // 4.2" 400x300, black/white
+
+// ── Lonely Binary's own panels ───────────────────────────────
+// Named LB_<size>_<inks>: size without the decimal point, then the inks.
+#define LB_437_BWR (&LB_EPD_PANELS[5])        // 4.37" 480x176, black/white/red
