@@ -31,6 +31,7 @@ is GPL-3.0; this library is MIT.
 | `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
 | `LB_154_BWY` | 1.54" **black, white and yellow**, Lonely Binary panel — [specification](docs/LB_154_BWY.md) | 152 × 152 | SSD1682 | 23.1 s / — |
 | `LB_154_BW` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW.md) | 200 × 200 | JD79653A | 3.6 s / — |
+| `LB_154_BW_1` | 1.54" black and white (second variant), Lonely Binary panel — [specification](docs/LB_154_BW_1.md) | 152 × 152 | SSD1682 | 3.5 s / — |
 | `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
 
 Three-ink panels take `LB_RED` (or `LB_YELLOW` on a yellow panel) like any other colour: `display.setTextColor(LB_RED)`.
