@@ -163,6 +163,14 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * BUSY low 3577 ms for a full refresh. See docs/LB_154_BW.md. */
   {"lb_154_bw", "LB 1.54 inch BW", LB_EPD_JD79653A, 200, 200, 1,
    false, 3577, 0, 2, false, &LB_WIRING_LB_S3},
+
+  /* LB_154_BW_1 - the second 1.54" black and white panel, 152 x 152, on the
+   * SSD1682 (the glass LB_154_BWR / LB_154_BWY use, without the colour ink).
+   * Rotation 1 like them. No partial refresh: a PARTIAL request ran the same
+   * 3471 ms waveform as a full one (measured 2026-10-30).
+   * See docs/LB_154_BW_1.md. */
+  {"lb_154_bw_1", "LB 1.54 inch BW (152x152)", LB_EPD_SSD1682, 152, 152, 1,
+   false, 3471, 0, 2, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -184,4 +192,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_213_BWR (&LB_EPD_PANELS[6])        // 2.13" 250x122, black/white/red
 #define LB_154_BWR (&LB_EPD_PANELS[7])        // 1.54" 152x152, black/white/red
 #define LB_154_BWY (&LB_EPD_PANELS[8])        // 1.54" 152x152, black/white/yellow
-#define LB_154_BW  (&LB_EPD_PANELS[9])        // 1.54" 200x200, black/white
+#define LB_154_BW  (&LB_EPD_PANELS[9])        // 1.54" 200x200, black/white (JD79653A)
+#define LB_154_BW_1 (&LB_EPD_PANELS[10])      // 1.54" 152x152, black/white (SSD1682)
