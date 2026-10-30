@@ -62,6 +62,8 @@ private:
   void cursorSSD1677();
   long refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshUC8176(const uint8_t *bw, uint32_t stride);
+  long refreshJD79653A(const uint8_t *bw, uint32_t stride);
+  void initJD79653A();
   long refreshUC8159(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshSSD1680Colour(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshUC81xxY(const uint8_t *bw, const uint8_t *colour, uint32_t stride);

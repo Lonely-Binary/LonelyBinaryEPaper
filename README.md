@@ -29,9 +29,11 @@ is GPL-3.0; this library is MIT.
 | `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
 | `LB_213_BWR` | 2.13" **black, white and red**, Lonely Binary panel — [specification](docs/LB_213_BWR.md) | 250 × 122 | SSD1680 | 14.3 s / — |
 | `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
+| `LB_154_BWY` | 1.54" **black, white and yellow**, Lonely Binary panel — [specification](docs/LB_154_BWY.md) | 152 × 152 | SSD1682 | 23.1 s / — |
+| `LB_154_BW` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW.md) | 200 × 200 | JD79653A | 3.6 s / — |
 | `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
 
-Three-ink panels take `LB_RED` like any other colour: `display.setTextColor(LB_RED)`.
+Three-ink panels take `LB_RED` (or `LB_YELLOW` on a yellow panel) like any other colour: `display.setTextColor(LB_RED)`.
 The frame is kept as two 1-bit planes, so a 7.5" needs 2 × 30 KB — it fits a
 classic ESP32 without PSRAM.
 
@@ -119,7 +121,7 @@ screen with no power at all, so the ESP32 can deep-sleep too.
 | | |
 |---|---|
 | `begin()` | Allocate the framebuffer, start SPI, clear to white, set the panel's rotation. Does not touch the screen. |
-| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`, plus `LB_RED` on a three-ink panel; any other colour is mapped to the nearest ink the panel has. |
+| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`, plus `LB_RED` (`LB_YELLOW` on a yellow panel) on a three-ink panel; any other colour is mapped to the nearest ink the panel has. |
 | `flush()` / `flush(LB_FLUSH_PARTIAL)` | Refresh. Blocks until the panel is done. |
 | `lastRefreshMs()` / `lastWasPartial()` | How the last refresh went. A time far below normal is as much a failure as `-1` (timeout). |
 | `sleep()` | Forget the previous frame; the next refresh is full. |

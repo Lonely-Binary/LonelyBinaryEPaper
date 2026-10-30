@@ -131,7 +131,7 @@ void LB_EPD::hardwareReset() {
 // See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
 // UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159 || _panel->driver == LB_EPD_UC81XX_Y) ? LOW : HIGH;
+  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159 || _panel->driver == LB_EPD_JD79653A || _panel->driver == LB_EPD_UC81XX_Y) ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -179,6 +179,7 @@ void LB_EPD::setWindow(uint32_t stride) {
 
 long LB_EPD::refreshFull(const uint8_t *frame, uint32_t stride) {
   if (_panel->driver == LB_EPD_UC8176) return refreshUC8176(frame, stride);
+  if (_panel->driver == LB_EPD_JD79653A) return refreshJD79653A(frame, stride);
   // A timeout well past the measured time: long enough for a cold panel,
   // short enough that a dead one does not hang the sketch for a minute.
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
@@ -559,6 +560,95 @@ long LB_EPD::refreshUC8176(const uint8_t *bw, uint32_t stride) {
   dat(0xF7);
   cmd(0x02);  // power off
   waitBusy(3000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── JD79653A ───────────────────────────────────────────────────────────────
+//
+// 1.54" 200 x 200 black and white (DKE DEPG0154BNF653F10CPHO). A UC81xx-style
+// command set, but unlike the UC8176 this chip will not power on from a short
+// init: the long sequence below (from GxEPD2's GxEPD2_154_M09, the same
+// controller), with its 0x01 power setting and the chip-specific 0x4D, is the
+// one the vendor verified. PSR 0xDF takes the waveform from the panel's OTP:
+// a register LUT would need 226 bytes of tables, and 0xFF without them runs an
+// empty waveform (a "refresh" of 77 ms and no change).
+// 0x13 is the new frame, the one shown; 0x10 the old frame, sent white.
+//
+// BUSY is low while busy: power on takes about 160 ms, the refresh 3.6 s, power
+// off 60 ms.
+//
+// No partial refresh. The OTP has no partial waveform, and the register
+// waveforms tried (GxEPD2's partial tables, then the same with twice the drive)
+// left black-to-white pixels grey: a visible ghost of every change.
+
+// Reset and the vendor's init.
+void LB_EPD::initJD79653A() {
+  const uint16_t w = _panel->width, h = _panel->height;
+  hardwareReset();
+  delay(200);
+  waitBusy(3000);
+  cmd(0x00);  // panel setting: waveform from OTP
+  dat(0xDF);
+  dat(0x0E);
+  cmd(0x01);  // power setting, 16 V
+  dat(0x03);
+  dat(0x06);
+  dat(0x2A);
+  dat(0x2A);
+  cmd(0x4D);  // FITI internal code
+  dat(0x55);
+  cmd(0xAA);
+  dat(0x0F);
+  cmd(0xE9);
+  dat(0x02);
+  cmd(0xB6);
+  dat(0x11);
+  cmd(0xF3);
+  dat(0x0A);
+  cmd(0x06);  // booster soft start
+  dat(0xC7);
+  dat(0x0C);
+  dat(0x0C);
+  cmd(0x61);  // resolution: one byte of width, two of height
+  dat(w & 0xFF);
+  dat(h >> 8);
+  dat(h & 0xFF);
+  cmd(0x60);  // TCON
+  dat(0x00);
+  cmd(0x82);  // VCOM DC
+  dat(0x12);
+  cmd(0x30);  // PLL, 50 Hz
+  dat(0x3C);
+  cmd(0x50);  // VCOM and data interval
+  dat(0x97);
+  cmd(0xE3);
+  dat(0x00);
+}
+
+long LB_EPD::refreshJD79653A(const uint8_t *bw, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+  const uint16_t h = _panel->height;
+
+  initJD79653A();
+  cmd(0x04);  // power on
+  waitBusy(5000);
+
+  cmd(0x10);  // old frame: white
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint32_t i = 0; i < (uint32_t)stride * h; i++) _spi->transfer(0xFF);
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+  sendFrame(0x13, bw, stride);
+
+  cmd(0x12);  // display refresh, no argument
+  const long ms = waitBusy(timeout);
+
+  cmd(0x02);  // power off
+  waitBusy(5000);
   cmd(0x07);  // deep sleep
   dat(0xA5);
   _partialReady = false;

@@ -17,6 +17,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_UC8176,    // UltraChip UC8176 (4.2" 400 x 300, black and white): BUSY LOW = busy
   LB_EPD_UC8159,    // UltraChip UC8159 (7.5" 640 x 384 three-ink, 4 bits a pixel): BUSY LOW = busy
   LB_EPD_SSD1682,   // Solomon SSD1682, three-colour (1.54" 152 x 152): BUSY high = busy
+  LB_EPD_JD79653A,  // FitiPower JD79653A (1.54" 200 x 200, black and white)
   LB_EPD_UC81XX_Y,  // UC81xx-family black / white / yellow (4.37" 176 x 480): BUSY LOW = busy, no init registers
 };
 
@@ -145,6 +146,23 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * BUSY 16156 ms for any content (whole flush 16441 ms). See docs/LB_154_BWR.md. */
   {"lb_154_bwr", "LB 1.54 inch BWR", LB_EPD_SSD1682, 152, 152, 1,
    false, 16156, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_154_BWY - 1.54" black / white / yellow, 152 x 152 (DKE, SSD16xx family).
+   * The same commands and geometry as LB_154_BWR, with a yellow third ink:
+   * red-plane RAM 0x26 (1 = yellow). No partial refresh.
+   * Verified 2026-10-30 on an ESP32-S3: colours (yellow ink) and orientation
+   * correct. refresh (lastRefreshMs()) 23051 ms. See docs/LB_154_BWY.md. */
+  {"lb_154_bwy", "LB 1.54 inch BWY", LB_EPD_SSD1682, 152, 152, 1,
+   false, 23051, 0, 3, true, &LB_WIRING_LB_S3},
+
+  /* LB_154_BW - 1.54" black and white, 200 x 200 (DKE DEPG0154BNF653F10CPHO),
+   * JD79653A; see refreshJD79653A() for the sequence. Waveform from the
+   * panel's OTP. Rotation 1: a quarter turn right of the native orientation,
+   * for the FPC on the right. No partial refresh.
+   * Verified 2026-10-30 on an ESP32-S3: picture and orientation correct,
+   * BUSY low 3577 ms for a full refresh. See docs/LB_154_BW.md. */
+  {"lb_154_bw", "LB 1.54 inch BW", LB_EPD_JD79653A, 200, 200, 1,
+   false, 3577, 0, 2, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -165,3 +183,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_437_BWR (&LB_EPD_PANELS[5])        // 4.37" 480x176, black/white/red
 #define LB_213_BWR (&LB_EPD_PANELS[6])        // 2.13" 250x122, black/white/red
 #define LB_154_BWR (&LB_EPD_PANELS[7])        // 1.54" 152x152, black/white/red
+#define LB_154_BWY (&LB_EPD_PANELS[8])        // 1.54" 152x152, black/white/yellow
+#define LB_154_BW  (&LB_EPD_PANELS[9])        // 1.54" 200x200, black/white

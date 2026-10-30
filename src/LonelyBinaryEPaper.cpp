@@ -106,6 +106,7 @@ void LB_EPaper::printInfo(Print &out) const {
              _panel->driver == LB_EPD_UC8179    ? "UC8179"
              : _panel->driver == LB_EPD_UC8176 ? "UC8176"
              : _panel->driver == LB_EPD_UC8159 ? "UC8159"
+             : _panel->driver == LB_EPD_JD79653A ? "JD79653A"
              : _panel->driver == LB_EPD_UC81XX_Y ? "UC81xx"
              : _panel->driver == LB_EPD_SSD1682 ? "SSD1682"
              : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
