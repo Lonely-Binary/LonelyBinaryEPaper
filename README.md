@@ -21,29 +21,39 @@ is GPL-3.0; this library is MIT.
 
 ## Supported panels
 
+Lonely Binary's own panels, smallest first.
+
+| Constant | Panel | Resolution | Controller | Full / partial refresh |
+|---|---|---|---|---|
+| `LB_154_BW` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW.md) | 152 × 152 | SSD1682 | 3.5 s / — |
+| `LB_154_BW_1` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW_1.md) | 200 × 200 | JD79653A | 3.6 s / — |
+| `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
+| `LB_154_BWY` | 1.54" **black, white and yellow**, Lonely Binary panel — [specification](docs/LB_154_BWY.md) | 152 × 152 | SSD1682 | 23.1 s / — |
+| `LB_213_BWR` | 2.13" **black, white and red**, Lonely Binary panel — [specification](docs/LB_213_BWR.md) | 250 × 122 | SSD1680 | 14.3 s / — |
+| `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
+
+Three-ink panels take `LB_RED` (or `LB_YELLOW` on a yellow panel) like any other colour: `display.setTextColor(LB_RED)`.
+
+### Third-party panels
+
+Not sold by Lonely Binary; they are here because the library was first proven
+on them.
+
 | Constant | Panel | Resolution | Controller | Full / partial refresh |
 |---|---|---|---|---|
 | `LB_LILYGO_T5_213` | LilyGO T5 2.13" (SKU H239), DEPG0213BN | 250 × 122 | SSD1680 | 4.2 s / 0.74 s |
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13", bare panel | 250 × 122 | SSD1680 | 3.7 s / 0.66 s |
 | `LB_WFT0420CZ15` | 4.2" black and white (ribbon WFT0420CZ15; GDEW042T2), bare panel | 400 × 300 | UC8176 | 3.9 s / — |
-| `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
-| `LB_213_BWR` | 2.13" **black, white and red**, Lonely Binary panel — [specification](docs/LB_213_BWR.md) | 250 × 122 | SSD1680 | 14.3 s / — |
-| `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
-| `LB_154_BWY` | 1.54" **black, white and yellow**, Lonely Binary panel — [specification](docs/LB_154_BWY.md) | 152 × 152 | SSD1682 | 23.1 s / — |
-| `LB_154_BW_1` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW_1.md) | 200 × 200 | JD79653A | 3.6 s / — |
-| `LB_154_BW` | 1.54" black and white, Lonely Binary panel — [specification](docs/LB_154_BW.md) | 152 × 152 | SSD1682 | 3.5 s / — |
 | `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
 
-Three-ink panels take `LB_RED` (or `LB_YELLOW` on a yellow panel) like any other colour: `display.setTextColor(LB_RED)`.
 The frame is kept as two 1-bit planes, so a 7.5" needs 2 × 30 KB — it fits a
 classic ESP32 without PSRAM.
 
 The T5 is a board with the panel built in, so its constant carries its pins
-too. It is not sold by Lonely Binary; it is here because it is what the
-library was first proven on. A bare panel's constant uses the same pins
+too. A bare panel's constant uses the same pins
 (CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); wire it differently and pass
-your pins with `setWiring()`. The `LB_*_BWR` rows are Lonely Binary's own panels;
-more will join this table.
+your pins with `setWiring()`. Lonely Binary's own panels use the ESP32-S3 pins
+given in each specification.
 
 ---
 
