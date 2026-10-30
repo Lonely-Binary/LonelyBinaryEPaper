@@ -155,21 +155,21 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
   {"lb_154_bwy", "LB 1.54 inch BWY", LB_EPD_SSD1682, 152, 152, 1,
    false, 23051, 0, 3, true, &LB_WIRING_LB_S3},
 
-  /* LB_154_BW - 1.54" black and white, 200 x 200 (DKE DEPG0154BNF653F10CPHO),
+  /* LB_154_BW_1 - 1.54" black and white, 200 x 200 (DKE DEPG0154BNF653F10CPHO),
    * JD79653A; see refreshJD79653A() for the sequence. Waveform from the
    * panel's OTP. Rotation 1: a quarter turn right of the native orientation,
    * for the FPC on the right. No partial refresh.
    * Verified 2026-10-30 on an ESP32-S3: picture and orientation correct,
-   * BUSY low 3577 ms for a full refresh. See docs/LB_154_BW.md. */
-  {"lb_154_bw", "LB 1.54 inch BW", LB_EPD_JD79653A, 200, 200, 1,
+   * BUSY low 3577 ms for a full refresh. See docs/LB_154_BW_1.md. */
+  {"lb_154_bw_1", "LB 1.54 inch BW (200x200)", LB_EPD_JD79653A, 200, 200, 1,
    false, 3577, 0, 2, false, &LB_WIRING_LB_S3},
 
-  /* LB_154_BW_1 - the second 1.54" black and white panel, 152 x 152, on the
+  /* LB_154_BW - the 1.54" black and white panel, 152 x 152, on the
    * SSD1682 (the glass LB_154_BWR / LB_154_BWY use, without the colour ink).
    * Rotation 1 like them. No partial refresh: a PARTIAL request ran the same
    * 3471 ms waveform as a full one (measured 2026-10-30).
-   * See docs/LB_154_BW_1.md. */
-  {"lb_154_bw_1", "LB 1.54 inch BW (152x152)", LB_EPD_SSD1682, 152, 152, 1,
+   * See docs/LB_154_BW.md. */
+  {"lb_154_bw", "LB 1.54 inch BW", LB_EPD_SSD1682, 152, 152, 1,
    false, 3471, 0, 2, false, &LB_WIRING_LB_S3},
 };
 
@@ -192,5 +192,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_213_BWR (&LB_EPD_PANELS[6])        // 2.13" 250x122, black/white/red
 #define LB_154_BWR (&LB_EPD_PANELS[7])        // 1.54" 152x152, black/white/red
 #define LB_154_BWY (&LB_EPD_PANELS[8])        // 1.54" 152x152, black/white/yellow
-#define LB_154_BW  (&LB_EPD_PANELS[9])        // 1.54" 200x200, black/white (JD79653A)
-#define LB_154_BW_1 (&LB_EPD_PANELS[10])      // 1.54" 152x152, black/white (SSD1682)
+#define LB_154_BW_1  (&LB_EPD_PANELS[9])      // 1.54" 200x200, black/white (JD79653A)
+#define LB_154_BW (&LB_EPD_PANELS[10])      // 1.54" 152x152, black/white (SSD1682)
