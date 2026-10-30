@@ -107,6 +107,7 @@ void LB_EPaper::printInfo(Print &out) const {
              : _panel->driver == LB_EPD_UC8176 ? "UC8176"
              : _panel->driver == LB_EPD_UC8159 ? "UC8159"
              : _panel->driver == LB_EPD_UC81XX_Y ? "UC81xx"
+             : _panel->driver == LB_EPD_SSD1682 ? "SSD1682"
              : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
              _panel->inks >= 3 ? (_panel->yellow ? "black / white / yellow" : "black / white / red") : "black / white");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",

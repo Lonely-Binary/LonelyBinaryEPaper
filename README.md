@@ -27,6 +27,8 @@ is GPL-3.0; this library is MIT.
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13", bare panel | 250 × 122 | SSD1680 | 3.7 s / 0.66 s |
 | `LB_WFT0420CZ15` | 4.2" black and white (ribbon WFT0420CZ15; GDEW042T2), bare panel | 400 × 300 | UC8176 | 3.9 s / — |
 | `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
+| `LB_213_BWR` | 2.13" **black, white and red**, Lonely Binary panel — [specification](docs/LB_213_BWR.md) | 250 × 122 | SSD1680 | 14.3 s / — |
+| `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
 | `LB_HED_EPD0750` | 7.5" **black, white and red** (HED-EPD0750-2BWR; GDEW075Z09 generation), bare panel | 640 × 384 | UC8159 | 8.4 s / — |
 
 Three-ink panels take `LB_RED` like any other colour: `display.setTextColor(LB_RED)`.
@@ -37,7 +39,8 @@ The T5 is a board with the panel built in, so its constant carries its pins
 too. It is not sold by Lonely Binary; it is here because it is what the
 library was first proven on. A bare panel's constant uses the same pins
 (CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); wire it differently and pass
-your pins with `setWiring()`. Lonely Binary's own panels will join this table.
+your pins with `setWiring()`. The `LB_*_BWR` rows are Lonely Binary's own panels;
+more will join this table.
 
 ---
 
@@ -116,7 +119,7 @@ screen with no power at all, so the ESP32 can deep-sleep too.
 | | |
 |---|---|
 | `begin()` | Allocate the framebuffer, start SPI, clear to white, set the panel's rotation. Does not touch the screen. |
-| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`; any other colour is mapped to the nearer of the two. |
+| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`, plus `LB_RED` on a three-ink panel; any other colour is mapped to the nearest ink the panel has. |
 | `flush()` / `flush(LB_FLUSH_PARTIAL)` | Refresh. Blocks until the panel is done. |
 | `lastRefreshMs()` / `lastWasPartial()` | How the last refresh went. A time far below normal is as much a failure as `-1` (timeout). |
 | `sleep()` | Forget the previous frame; the next refresh is full. |

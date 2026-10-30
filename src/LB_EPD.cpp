@@ -226,6 +226,44 @@ long LB_EPD::refreshPartial(const uint8_t *frame, uint32_t stride) {
   return ms;
 }
 
+// Three-colour SSD1680 (2.13" 122 x 250, GoodDisplay GDEY0213Z98). Same chip as
+// the black-and-white panels above, with the colour differences from the
+// vendor's demo: border waveform 0x3C 0x05, display update control 0x21 0x00
+// 0x80 (black/white and red RAM both enabled), then 0x24 = black/white
+// (1 = white) and 0x26 = red (1 = red), and the full-update mode 0xF7. One
+// refresh runs the three-colour waveform: about 15 s, whatever the content.
+
+long LB_EPD::refreshSSD1680Colour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+
+  hardwareReset();
+  waitBusy(3000);
+  cmd(SSD1680_SWRESET);
+  waitBusy(3000);
+  setWindow(stride);
+  cmd(SSD1680_BORDER);
+  dat(0x05);
+  if (_panel->driver == LB_EPD_SSD1680) {  // SSD1682 (152-gate panels) is left at its default
+    cmd(0x21);
+    dat(0x00);
+    dat(0x80);
+  }
+
+  sendFrame(SSD1680_RAM_BW, bw, stride);
+  setWindow(stride);
+  sendFrame(SSD1680_RAM_PREV, red, stride);
+
+  cmd(SSD1680_UPDATE_CTRL2);
+  dat(0xF7);
+  cmd(SSD1680_ACTIVATE);
+  const long ms = waitBusy(timeout);
+
+  cmd(SSD1680_DEEP_SLEEP);
+  dat(0x01);
+  _partialReady = false;
+  return ms;
+}
+
 // ─── SSD1677 ────────────────────────────────────────────────────────────────
 //
 // Waveshare's EPD_7in5b_HD.c (the 880 x 528 black / white / red panel, sold
@@ -305,6 +343,7 @@ long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t strid
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
   if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
   if (_panel->driver == LB_EPD_UC81XX_Y) return refreshUC81xxY(bw, red, stride);
+  if (_panel->driver == LB_EPD_SSD1680 || _panel->driver == LB_EPD_SSD1682) return refreshSSD1680Colour(bw, red, stride);
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
   initSSD1677();
