@@ -39,7 +39,8 @@ The T5 is a board with the panel built in, so its constant carries its pins
 too. It is not sold by Lonely Binary; it is here because it is what the
 library was first proven on. A bare panel's constant uses the same pins
 (CS 5, DC 17, RST 16, BUSY 4, SCK 18, MOSI 23); wire it differently and pass
-your pins with `setWiring()`. Lonely Binary's own panels will join this table.
+your pins with `setWiring()`. The `LB_*_BWR` rows are Lonely Binary's own panels;
+more will join this table.
 
 ---
 
@@ -118,7 +119,7 @@ screen with no power at all, so the ESP32 can deep-sleep too.
 | | |
 |---|---|
 | `begin()` | Allocate the framebuffer, start SPI, clear to white, set the panel's rotation. Does not touch the screen. |
-| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`; any other colour is mapped to the nearer of the two. |
+| Drawing | `fillScreen`, `fillRect`, `drawLine`, `drawCircle`, `drawString`, `drawJpg`, … — the Lonely Binary GFX API. Use `LB_BLACK` and `LB_WHITE`, plus `LB_RED` on a three-ink panel; any other colour is mapped to the nearest ink the panel has. |
 | `flush()` / `flush(LB_FLUSH_PARTIAL)` | Refresh. Blocks until the panel is done. |
 | `lastRefreshMs()` / `lastWasPartial()` | How the last refresh went. A time far below normal is as much a failure as `-1` (timeout). |
 | `sleep()` | Forget the previous frame; the next refresh is full. |
