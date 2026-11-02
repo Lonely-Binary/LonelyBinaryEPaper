@@ -1,3 +1,4 @@
+#include <string.h>
 #include "LonelyBinaryEPaper.h"
 
 constexpr lb_color_t LB_EPDPanel::kInks[3];
@@ -57,8 +58,8 @@ LB_EPaper::~LB_EPaper() {
 
 void LB_EPaper::setWiring(const LB_EPDWiring &wiring) {
   if (_epd) return;  // too late; begin() has already set the pins up
+  if (memcmp(&_wiring, &wiring, sizeof wiring)) _customWiring = true;   // same as the default is not custom
   _wiring = wiring;
-  _customWiring = true;
 }
 
 bool LB_EPaper::begin() {
