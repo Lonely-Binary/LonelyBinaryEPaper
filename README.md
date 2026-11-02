@@ -94,6 +94,7 @@ ones before it:
 | `07_Chart` | A chart that grows one point per partial refresh. |
 | `08_Dashboard` | Four readings with icons, laid out from the screen size. |
 | `09_DeepSleep` | Draw, then deep-sleep the ESP32; the picture stays with no power. |
+| `10_DeepClean` | Wipe a ghost: every ink, full screen, several rounds, ending on white. Run it when an old picture shows through. |
 
 ### Three things that are different from a TFT
 
@@ -121,6 +122,36 @@ Only what changed moves. Two rules:
 
 After `sleep()`, the next refresh is full again.
 
+### Ghosting on colour panels — refresh regularly
+
+An e-paper picture is made of charged ink particles. Leave the same picture
+up for a long time — days or weeks — and the particles settle where they are:
+the next refresh no longer moves all of them, and the old picture stays
+faintly visible under the new one. This is a **ghost** (image retention).
+
+**Colour panels (black / white / red or yellow) show it most.** The red and
+yellow particles are slower than the black ones, so a large solid block of red
+or yellow left up for days is the typical case: it comes back as a pink or
+grey shadow on white. Cold makes it worse. A ghost is not a broken panel, and
+it can almost always be cleared.
+
+To keep it away:
+
+- **Refresh at least once a day**, even when nothing has changed — redraw the
+  same screen if you have to.
+- Do not leave a large solid block of red or yellow up for days; move it,
+  shrink it, or outline it instead of filling it.
+- Clear the screen to white before putting the device away.
+- Run a clearing cycle now and then — once a day, or every few hundred
+  refreshes.
+
+**To remove a ghost, run `10_DeepClean`.** It fills the whole screen with each
+ink in turn (black → white → red → white), three rounds, and ends on white. A
+ghost left for weeks may need two runs. On a colour panel every refresh runs
+the whole colour waveform, so this takes a few minutes (about 3 on the 2.13"
+red panel); do not unplug it halfway. Its `deepClean()` function can be copied
+into your own sketch as it is.
+
 ### Power
 
 The panel is put into deep sleep after every refresh, so it never stays
@@ -138,7 +169,7 @@ screen with no power at all, so the ESP32 can deep-sleep too.
 | `sleep()` | Forget the previous frame; the next refresh is full. |
 | `setRotation(0..3)` | Rotated in software. |
 | `width()` / `height()` | Current size, rotation included. |
-| `setWiring(pins)` | Your own pins, before `begin()`. Start from the panel's: `LB_EPDWiring pins = *LB_LILYGO_T5_213->wiring;` |
+| `setWiring(pins)` | Your own pins, before `begin()`. Every example lists its pins as `#define PIN_...` at the top and calls this for you. Start from the panel's: `LB_EPDWiring pins = *LB_LILYGO_T5_213->wiring;` |
 | `printInfo()` | Panel, pins and the last refresh, on Serial. |
 
 ---

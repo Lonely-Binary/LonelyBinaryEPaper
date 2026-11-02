@@ -35,6 +35,15 @@
  */
 #include <LonelyBinaryEPaper.h>
 
+// ---- GPIO wiring. Every pin this sketch uses is here - change the numbers to match
+// ---- your board; nothing below refers to a GPIO by number. -1 = not connected.
+#define PIN_CS     5
+#define PIN_DC    17
+#define PIN_RST   16
+#define PIN_BUSY   4   // e-paper BUSY output
+#define PIN_SCLK  18
+#define PIN_MOSI  23
+
 LB_EPaper display(LB_LILYGO_T5_213);
 
 // 1 = real time. Set to 60 to watch an hour go by in a minute - handy for
@@ -89,6 +98,11 @@ void setup() {
   startSeconds = ((__TIME__[0] - '0') * 10 + (__TIME__[1] - '0')) * 3600 +
                  ((__TIME__[3] - '0') * 10 + (__TIME__[4] - '0')) * 60 +
                  ((__TIME__[6] - '0') * 10 + (__TIME__[7] - '0'));
+  LB_EPDWiring pins = *LB_LILYGO_T5_213->wiring;   // keeps the SPI bus that fits this chip
+  pins.cs = PIN_CS;  pins.dc = PIN_DC;  pins.rst = PIN_RST;
+  pins.busy = PIN_BUSY;  pins.sclk = PIN_SCLK;  pins.mosi = PIN_MOSI;
+  display.setWiring(pins);
+
   display.begin();
   showSeconds = display.supportsPartial();
   draw(now());

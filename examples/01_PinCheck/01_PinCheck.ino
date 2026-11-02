@@ -27,6 +27,15 @@
  */
 #include <LonelyBinaryEPaper.h>
 
+// ---- GPIO wiring. Every pin this sketch uses is here - change the numbers to match
+// ---- your board; nothing below refers to a GPIO by number. -1 = not connected.
+#define PIN_CS     5
+#define PIN_DC    17
+#define PIN_RST   16
+#define PIN_BUSY   4   // e-paper BUSY output
+#define PIN_SCLK  18
+#define PIN_MOSI  23
+
 LB_EPaper display(LB_LILYGO_T5_213);
 
 static bool verdict(const char *what) {
@@ -54,6 +63,11 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   Serial.println("\n===== 01_PinCheck =====");
+  LB_EPDWiring pins = *LB_LILYGO_T5_213->wiring;   // keeps the SPI bus that fits this chip
+  pins.cs = PIN_CS;  pins.dc = PIN_DC;  pins.rst = PIN_RST;
+  pins.busy = PIN_BUSY;  pins.sclk = PIN_SCLK;  pins.mosi = PIN_MOSI;
+  display.setWiring(pins);
+
   if (!display.begin()) {
     Serial.println("begin() failed: not enough RAM for the framebuffer.");
     return;
