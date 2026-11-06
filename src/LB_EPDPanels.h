@@ -222,7 +222,7 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * (warmup). Bare power-on ~142 ms (LB_583_BWR: ~55 ms). Verified on an
    * ESP32-S3. See docs/LB_583_BWR_1.md. */
   {"lb_583_bwr_1", "LB 5.83 inch BWR (2nd model)", LB_EPD_UC8179, 648, 480, 0,
-   false, 18826, 0, 3, false, &LB_WIRING_LB_S3, 16, true},
+   false, 18831, 0, 3, false, &LB_WIRING_LB_S3, 16, true},
 
   /* LB_583_BWY - the same panel as LB_583_BWR_1 with yellow ink: same
    * offset, same warm-up, a shorter waveform. Verified 2026-11-06 on an
