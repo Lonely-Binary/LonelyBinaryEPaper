@@ -36,6 +36,11 @@ scene, 2026-11-06.
 - Repeatability is ±4 ms over 13 refreshes in a row.
 - The controller picks the waveform by temperature, so expect it to move with
   the weather.
+- **A second 5.83" unit** (same probe signature: BUSY low ~55 ms after power-on)
+  ran the same driver unchanged, with a slightly longer waveform: BUSY
+  12 272–12 277 ms, whole `flush()` 13 044–13 049 ms, over the same 13
+  refreshes. Its picture held unchanged for 80 s after the refresh. Plan for
+  about 11.5–12.3 s.
 
 Not measured yet: temperature dependence, supply current, ghosting over many
 refreshes.
@@ -57,8 +62,8 @@ Other pins: `setWiring()`.
 
 Rotation 0: landscape. Verified on the panel (2026-11-06, ESP32-S3) with an
 asymmetric `F`, black and red blocks, text, the bottom corner blocks and the
-outer frame: nothing mirrored, the full 648 × 480 addressed. The camera did not
-frame the top edge, so the two top corner blocks were not seen.
+outer frame: nothing mirrored, the full 648 × 480 addressed. The top edge (title
+bar, top corner blocks) was confirmed on the second unit.
 
 ## Notes on this panel
 
