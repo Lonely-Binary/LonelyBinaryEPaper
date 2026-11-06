@@ -48,14 +48,28 @@ constant it either never powers up or draws shifted 16 columns to the left.
 
 ESP32-S3 (Arduino-ESP32 3.3.10), room temperature, SPI 4 MHz, 2026-11-06.
 
-| Panel | Scene | BUSY (refresh) | Whole `flush()` |
-|---|---|---|---|
-| `LB_583_BWR_1` (red) | dashboard demo page, 1 run | 18 826 ms | 20 110 ms |
-| `LB_583_BWY` (yellow) | demo page and raw test patterns, 4 runs | 15 799–15 812 ms | 17 085 ms (demo) |
+**`LB_583_BWR_1` (red), 13 refreshes in a row (3 per scene, plus one page first):**
 
-**Not yet measured:** the full 13-refresh benchmark (white / black / colour /
-page) on the red unit. The figures above come from single pages. Expect the
-time to move with temperature.
+| Scene | BUSY (refresh) | Whole `flush()` |
+|---|---|---|
+| Full white | 18 830–18 833 ms | 20 115–20 118 ms |
+| Full black | 18 830–18 831 ms | 20 116–20 117 ms |
+| Full red | 18 831–18 832 ms | 20 117–20 118 ms |
+| Mixed page (text, black and red blocks, frame) | 18 829–18 832 ms | 20 114–20 118 ms |
+
+- **The refresh takes the same ~18.8 s whatever is on the screen.** One fixed
+  three-colour waveform, no shortcut.
+- `flush()` adds about **1.29 s** to the BUSY time. That covers the warm-up
+  power-on cycle, reset, init, sending 2 × 39 840 bytes at 4 MHz, power on and
+  power off.
+- Repeatability is ±2 ms over 13 refreshes in a row.
+
+**`LB_583_BWY` (yellow):** BUSY 15 799–15 812 ms over 4 runs (a dashboard page
+and raw test patterns), whole `flush()` 17 085 ms. The full benchmark has not
+been run on the yellow unit.
+
+The controller picks the waveform by temperature, so expect both times to move
+with the weather.
 
 ## Is it a four-colour panel?
 
