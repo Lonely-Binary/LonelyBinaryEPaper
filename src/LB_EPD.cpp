@@ -343,6 +343,7 @@ void LB_EPD::initSSD1677() {
 long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
   if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
+  if (_panel->driver == LB_EPD_UC8176) return refreshUC8176Colour(bw, red, stride);
   if (_panel->driver == LB_EPD_UC81XX_Y) return refreshUC81xxY(bw, red, stride);
   if (_panel->driver == LB_EPD_UC81XX_RY) return refreshUC81xxRY(bw, red, stride);
   if (_panel->driver == LB_EPD_SSD1680 || _panel->driver == LB_EPD_SSD1682) return refreshSSD1680Colour(bw, red, stride);
@@ -813,6 +814,59 @@ long LB_EPD::refreshUC81xxRY(const uint8_t *bw, const uint8_t *colour, uint32_t 
   cmd(0x02);  // power off
   dat(0x00);
   waitBusy(5000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
+}
+
+// ─── UC8176 three-colour (4.2" 400 x 300 black / white / red) ───────────────
+//
+// The GDEW042Z15 / Waveshare 4.2" (B) V1 generation. Power, booster, PLL and
+// VCOM as the black-and-white UC8176 panel; panel setting 0x0F selects the
+// three-colour OTP waveform. 0x10 is the black/white plane (1 = white), 0x13
+// the red plane, which this controller reads as 0 = red - so it goes out
+// inverted from the library's 1 = red.
+
+long LB_EPD::refreshUC8176Colour(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+  const uint16_t h = _panel->height;
+
+  hardwareReset();
+  delay(200);
+  waitBusy(3000);
+  cmd(0x06);  // booster soft start
+  dat(0x17);
+  dat(0x17);
+  dat(0x17);
+  cmd(0x04);  // power on
+  delay(100);
+  waitBusy(3000);
+  cmd(0x00);  // panel setting: black/white/red, waveform from OTP
+  dat(0x0F);
+
+  sendFrame(0x10, bw, stride);
+  cmd(0x13);
+  uint8_t row[100];
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint16_t y = 0; y < h; y++) {
+    const uint16_t src = _panel->mirrorGate ? h - 1 - y : y;
+    const uint8_t *r = red + (size_t)src * stride;
+    for (uint32_t i = 0; i < stride; i++) row[i] = (uint8_t)~r[i];
+    _spi->writeBytes(row, stride);
+  }
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+
+  cmd(0x12);  // display refresh
+  delay(10);
+  const long ms = waitBusy(timeout);
+
+  cmd(0x50);  // border floating while asleep
+  dat(0xF7);
+  cmd(0x02);  // power off
+  waitBusy(3000);
   cmd(0x07);  // deep sleep
   dat(0xA5);
   _partialReady = false;
