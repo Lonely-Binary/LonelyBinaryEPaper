@@ -64,6 +64,18 @@ Rotation 0: landscape, upright with the FPC tab at the bottom. Verified on the
 panel (2026-11-06, ESP32-S3) with an asymmetric `F`, corner blocks of three
 different inks and a block of each ink: nothing mirrored, nothing missing.
 
+## Compatible panels
+
+- **HS-E4.2LE-V4.0-C** (4.2" black / white / red / yellow) works with
+  `LB_420_BWRY` unchanged. Verified 2026-11-06 on an ESP32-S3 with the default
+  pins: all four inks, orientation and corners correct; BUSY 21 829 ms,
+  `flush()` 22 377 ms. Its OTP holds a standard waveform (temperature bands
+  2 … 35 °C) and a `0xA5` configuration block (strings "HSPQ1LMV01", "NR437").
+- **HS-E4.2LE-V2.1 does not work** — not with this panel entry, nor with any
+  standard 4.2" four-ink sequence: the refresh never ends. Its OTP holds an
+  8 KB encoded blob instead of a standard waveform. The two labels differ only
+  in the version number, so check it before wiring one up.
+
 ## Notes on this panel
 
 - The init sequence is the factory sample's (`DEPG0420RY683FxX.c`), as proven
