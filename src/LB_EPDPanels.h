@@ -19,6 +19,7 @@ enum LB_EPDDriver : uint8_t {
   LB_EPD_SSD1682,   // Solomon SSD1682, three-colour (1.54" 152 x 152): BUSY high = busy
   LB_EPD_JD79653A,  // FitiPower JD79653A (1.54" 200 x 200, black and white)
   LB_EPD_UC81XX_Y,  // UC81xx-family black / white / yellow (4.37" 176 x 480): BUSY LOW = busy, no init registers
+  LB_EPD_UC81XX_RY, // UC81xx-family four-ink black / white / red / yellow, 2 bits a pixel (4.2" 400 x 300): BUSY LOW = busy
 };
 
 /* The pins. A board with the panel built in carries its own; a bare panel on
@@ -39,7 +40,8 @@ struct LB_EPDPanelDef {
   bool          mirrorGate;   // default scan runs the long axis backwards
   uint16_t      fullMs;       // measured; for timeouts and printInfo()
   uint16_t      partialMs;    // 0 = the panel has no partial refresh (colour panels)
-  uint8_t       inks;         // 2 = black and white; 3 = black, white and a third ink
+  uint8_t       inks;         // 2 = black and white; 3 = black, white and a third ink;
+                              // 4 = black, white, red and yellow
   bool          yellow;       // the third ink is yellow, not red
   const LB_EPDWiring *wiring; // fixed wiring of a board with the panel on it
 };
@@ -171,6 +173,15 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * See docs/LB_154_BW.md. */
   {"lb_154_bw", "LB 1.54 inch BW", LB_EPD_SSD1682, 152, 152, 1,
    false, 3471, 0, 2, false, &LB_WIRING_LB_S3},
+
+  /* LB_420_BWRY - 4.2" black / white / red / yellow, 400 x 300 (DKE / GYSDISPLAY
+   * DEPG0420RYF668F38; label NF420N005FS915, FPC 15-22243-M0061-42_A1).
+   * UC81xx-style controller, 2 bits a pixel in one RAM (0x10): 0 black,
+   * 1 white, 2 yellow, 3 red. Init from the factory sample (DEPG0420RY683FxX.c),
+   * as proven in the QC repository. No partial refresh. `yellow` is unused:
+   * both third inks are there. See docs/LB_420_BWRY.md. */
+  {"lb_420_bwry", "LB 4.2 inch BWRY", LB_EPD_UC81XX_RY, 400, 300, 0,
+   false, 23500, 0, 4, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -194,3 +205,4 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_154_BWY (&LB_EPD_PANELS[8])        // 1.54" 152x152, black/white/yellow
 #define LB_154_BW_1  (&LB_EPD_PANELS[9])      // 1.54" 200x200, black/white (JD79653A)
 #define LB_154_BW (&LB_EPD_PANELS[10])      // 1.54" 152x152, black/white (SSD1682)
+#define LB_420_BWRY (&LB_EPD_PANELS[11])    // 4.2" 400x300, black/white/red/yellow

@@ -40,6 +40,7 @@ None of that applies here.
 | `LB_HINK_E0213A22` | HINK-E0213A22-A0 2.13" bare panel, SSD1680, T5 pins | 250 x 122, landscape | 3.7 s / 0.66 s |
 | `LB_WFT0420CZ15` | 4.2" black/white bare panel (WFT0420CZ15), UC8176, T5 pins | 400 x 300, landscape | 3.9 s / none |
 | `LB_HED_EPD0750` | 7.5" black/white/RED bare panel (HED-EPD0750), UC8159, T5 pins; use LB_RED | 640 x 384, landscape | 8.4 s / none |
+| `LB_420_BWRY` | 4.2" black/white/RED/YELLOW Lonely Binary panel, UC81xx, ESP32-S3 pins (CS 10, DC 2, RST 42, BUSY 41, SCK 12, MOSI 11); use LB_RED and LB_YELLOW | 400 x 300, landscape | 23.5 s / none |
 
 ## The whole API
 

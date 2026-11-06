@@ -36,7 +36,8 @@ public:
   long refreshPartial(const uint8_t *frame, uint32_t stride);
 
   /* Three-ink panels: `bw` is 1 = white / 0 = black, `red` is 1 = red (red
-   * wins over black). Both native orientation, `stride` bytes a row. Always a
+   * wins over black). Four-ink panels: the pair (bw, red) is the ink -
+   * (0, 0) black, (1, 0) white, (0, 1) red, (1, 1) yellow. Both native orientation, `stride` bytes a row. Always a
    * full refresh. Returns the refresh time in ms, or -1 on a BUSY timeout. */
   long refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t stride);
 
@@ -67,6 +68,7 @@ private:
   long refreshUC8159(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshSSD1680Colour(const uint8_t *bw, const uint8_t *red, uint32_t stride);
   long refreshUC81xxY(const uint8_t *bw, const uint8_t *colour, uint32_t stride);
+  long refreshUC81xxRY(const uint8_t *bw, const uint8_t *colour, uint32_t stride);
   void sendPlaneReversed(uint8_t ramCmd, const uint8_t *plane, uint32_t stride);
   long waitBusy(uint32_t timeoutMs);
 };
