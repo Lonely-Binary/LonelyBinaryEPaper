@@ -34,6 +34,8 @@ Lonely Binary's own panels, smallest first.
 | `LB_420_BWRY` | 4.2" **black, white, red and yellow**, Lonely Binary panel — [specification](docs/LB_420_BWRY.md) | 400 × 300 | UC81xx | 23.5 s / — |
 | `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
 | `LB_583_BWR` | 5.83" **black, white and red**, Lonely Binary panel — [specification](docs/LB_583_BWR.md) | 648 × 480 | UC8179 | 12.3 s / — |
+| `LB_583_BWR_1` | 5.83" **black, white and red**, the second Lonely Binary 5.83" model — [specification](docs/LB_583_BWR_1.md) | 648 × 480 | UC8179 | 20.1 s / — |
+| `LB_583_BWY` | 5.83" **black, white and yellow**, same panel as `LB_583_BWR_1` — [specification](docs/LB_583_BWR_1.md) | 648 × 480 | UC8179 | 17.1 s / — |
 
 Three-ink panels take `LB_RED` (or `LB_YELLOW` on a yellow panel) like any other colour: `display.setTextColor(LB_RED)`. The four-ink `LB_420_BWRY` takes both `LB_RED` and `LB_YELLOW`.
 

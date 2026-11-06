@@ -44,6 +44,13 @@ struct LB_EPDPanelDef {
                               // 4 = black, white, red and yellow
   bool          yellow;       // the third ink is yellow, not red
   const LB_EPDWiring *wiring; // fixed wiring of a board with the panel on it
+  // Optional, zero for most panels (left out of an entry = 0 / false):
+  uint8_t       sourceOffset; // dead source columns before the first visible one,
+                              // a multiple of 8. The controller is told width +
+                              // offset and every row is padded on the left.
+  bool          warmup;       // power on once with the controller's defaults
+                              // before the real init: some panels' boosters will
+                              // not start cold with the full power settings
 };
 
 /* LilyGO T5 2.13" (SKU H239, T5 V2.3.1 / V2.4). Pins as LilyGO's own examples
@@ -206,6 +213,22 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * See docs/LB_583_BWR.md. */
   {"lb_583_bwr", "LB 5.83 inch BWR", LB_EPD_UC8179, 648, 480, 0,
    false, 11538, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_583_BWR_1 - the second 5.83" black / white / red model, 648 x 480,
+   * NOT the same as LB_583_BWR. UC8179 sequence with two quirks found on the
+   * panel (2026-11-06): the visible area is source columns 16..663 of 664
+   * (sourceOffset 16), and a cold power-on with the full power settings never
+   * finishes unless the controller is powered on once with its defaults first
+   * (warmup). Bare power-on ~142 ms (LB_583_BWR: ~55 ms). Verified on an
+   * ESP32-S3. See docs/LB_583_BWR_1.md. */
+  {"lb_583_bwr_1", "LB 5.83 inch BWR (2nd model)", LB_EPD_UC8179, 648, 480, 0,
+   false, 18826, 0, 3, false, &LB_WIRING_LB_S3, 16, true},
+
+  /* LB_583_BWY - the same panel as LB_583_BWR_1 with yellow ink: same
+   * offset, same warm-up, a shorter waveform. Verified 2026-11-06 on an
+   * ESP32-S3. See docs/LB_583_BWR_1.md. */
+  {"lb_583_bwy", "LB 5.83 inch BWY", LB_EPD_UC8179, 648, 480, 0,
+   false, 15810, 0, 3, true, &LB_WIRING_LB_S3, 16, true},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -233,3 +256,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_266_BWR (&LB_EPD_PANELS[12])     // 2.66" 296x152, black/white/red (SSD1680)
 #define LB_420_BWR (&LB_EPD_PANELS[13])     // 4.2" 400x300, black/white/red (UC8176)
 #define LB_583_BWR (&LB_EPD_PANELS[14])     // 5.83" 648x480, black/white/red (UC8179)
+#define LB_583_BWR_1 (&LB_EPD_PANELS[15])   // 5.83" 648x480, black/white/red, 2nd model (UC8179, offset + warm-up)
+#define LB_583_BWY (&LB_EPD_PANELS[16])     // 5.83" 648x480, black/white/yellow (same panel as LB_583_BWR_1)

@@ -116,6 +116,25 @@ void LB_EPD::sendFrame(uint8_t ramCmd, const uint8_t *frame, uint32_t stride) {
   _spi->endTransaction();
 }
 
+// sendFrame with `pad` bytes of `padValue` before every row, for panels whose
+// first visible source column is not column 0 (LB_EPDPanelDef::sourceOffset).
+void LB_EPD::sendFramePadded(uint8_t ramCmd, const uint8_t *frame, uint32_t stride, uint8_t pad, uint8_t padValue) {
+  if (!pad) { sendFrame(ramCmd, frame, stride); return; }
+  cmd(ramCmd);
+  uint8_t lead[8];
+  memset(lead, padValue, sizeof lead);
+  const uint16_t rows = _panel->height;
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint16_t r = 0; r < rows; r++) {
+    const uint16_t src = _panel->mirrorGate ? rows - 1 - r : r;
+    _spi->writeBytes(lead, pad > sizeof lead ? sizeof lead : pad);
+    _spi->writeBytes(frame + (size_t)src * stride, stride);
+  }
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+}
+
 // Timings as on the QC rig's direct driver, which the vendor's 20 ms / 20 ms
 // also satisfies. The reset itself is short; the wait after it is BUSY's job.
 void LB_EPD::hardwareReset() {
@@ -381,6 +400,17 @@ long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t strid
 long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t stride) {
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
+  if (_panel->warmup) {
+    // A cold power-on with the full settings below never finished on one
+    // 5.83" panel (BUSY stayed low); one with the defaults first fixed it,
+    // five times out of five.
+    hardwareReset();
+    waitBusy(3000);
+    cmd(0x04);
+    waitBusy(3000);
+    cmd(0x02);
+    waitBusy(3000);
+  }
   hardwareReset();
   waitBusy(3000);
   cmd(0x01);  // power setting: VGH/VGL +-20 V, VDH/VDL +-15 V
@@ -398,9 +428,10 @@ long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t strid
   waitBusy(3000);
   cmd(0x00);  // panel setting: black/white/red, waveform from OTP
   dat(0x0F);
-  cmd(0x61);  // resolution
-  dat(_panel->width >> 8);
-  dat(_panel->width & 0xFF);
+  const uint16_t srcW = _panel->width + _panel->sourceOffset;
+  cmd(0x61);  // resolution (including any dead columns on the left)
+  dat(srcW >> 8);
+  dat(srcW & 0xFF);
   dat(_panel->height >> 8);
   dat(_panel->height & 0xFF);
   cmd(0x15);  // dual SPI off
@@ -411,8 +442,8 @@ long LB_EPD::refreshUC8179(const uint8_t *bw, const uint8_t *red, uint32_t strid
   cmd(0x60);  // TCON
   dat(0x22);
 
-  sendFrame(0x10, bw, stride);
-  sendFrame(0x13, red, stride);
+  sendFramePadded(0x10, bw, stride, _panel->sourceOffset / 8, 0xFF);   // pad white
+  sendFramePadded(0x13, red, stride, _panel->sourceOffset / 8, 0x00);  // pad no red
 
   cmd(0x12);  // display refresh
   delay(10);  // the vendor: at least 200 us before BUSY means anything

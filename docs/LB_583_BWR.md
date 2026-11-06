@@ -67,6 +67,11 @@ bar, top corner blocks) was confirmed on the second unit.
 
 ## Notes on this panel
 
+- **There is a second 5.83" model: `LB_583_BWR_1` (and its yellow version
+  `LB_583_BWY`).** It is a different panel that needs a warm-up power-on and a
+  16-column offset. See [LB_583_BWR_1.md](LB_583_BWR_1.md) for how to tell the
+  two apart; a bare power-on takes ~55 ms here and ~142 ms there.
+
 - Same commands as the library's UC8179 path (written for the 7.5" 800 × 480
   generation); only the resolution differs. It drew correctly on the first try.
 - The other common 5.83" three-colour panel is 600 × 448 on a UC8159 (4 bits a
