@@ -57,6 +57,7 @@ private:
   void cmd(uint8_t c);
   void dat(uint8_t d);
   void sendFrame(uint8_t ramCmd, const uint8_t *frame, uint32_t stride);
+  void sendFramePadded(uint8_t ramCmd, const uint8_t *frame, uint32_t stride, uint8_t pad, uint8_t padValue);
   void hardwareReset();
   void setWindow(uint32_t stride);
   void initSSD1677();
