@@ -100,6 +100,7 @@ ones before it:
 | `08_Dashboard` | Four readings with icons, laid out from the screen size. |
 | `09_DeepSleep` | Draw, then deep-sleep the ESP32; the picture stays with no power. |
 | `10_DeepClean` | Wipe a ghost: every ink, full screen, several rounds, ending on white. Run it when an old picture shows through. |
+| `11_MinuteClock` | A colour-panel desk clock: one full refresh a minute, time on a red card, date, day progress, chip temperature. Made for the 2.66" BWR; one optional pin switches the panel's power. |
 
 ### Three things that are different from a TFT
 
