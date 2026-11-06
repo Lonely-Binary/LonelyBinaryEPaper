@@ -182,6 +182,21 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * both third inks are there. See docs/LB_420_BWRY.md. */
   {"lb_420_bwry", "LB 4.2 inch BWRY", LB_EPD_UC81XX_RY, 400, 300, 0,
    false, 23500, 0, 4, false, &LB_WIRING_LB_S3},
+
+  /* LB_266_BWR - 2.66" black / white / red, 152 x 296 (HINK-E0266A12-FPC-A01,
+   * label HE266A27RF). SSD1680-class: BUSY high = busy, goes busy for a moment
+   * after SWRESET (probed 2026-11-06). Same command set and colour path as
+   * LB_213_BWR; only the geometry differs. Rotation 1: upright with the FPC on
+   * the right. Verified 2026-11-06 on an ESP32-S3. See docs/LB_266_BWR.md. */
+  {"lb_266_bwr", "LB 2.66 inch BWR", LB_EPD_SSD1680, 152, 296, 1,
+   false, 14903, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_420_BWR - 4.2" black / white / red, 400 x 300 (label HS-E4.2LE-V2.1,
+   * AYD-2341). UltraChip-style: BUSY low = busy, low ~109 ms after power-on
+   * 0x04 (probed 2026-11-06). Driven as the UC8176 three-colour generation.
+   * UNVERIFIED until first run. */
+  {"lb_420_bwr", "LB 4.2 inch BWR", LB_EPD_UC8176, 400, 300, 0,
+   false, 15000, 0, 3, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -206,3 +221,5 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_154_BW_1  (&LB_EPD_PANELS[9])      // 1.54" 200x200, black/white (JD79653A)
 #define LB_154_BW (&LB_EPD_PANELS[10])      // 1.54" 152x152, black/white (SSD1682)
 #define LB_420_BWRY (&LB_EPD_PANELS[11])    // 4.2" 400x300, black/white/red/yellow
+#define LB_266_BWR (&LB_EPD_PANELS[12])     // 2.66" 296x152, black/white/red (SSD1680)
+#define LB_420_BWR (&LB_EPD_PANELS[13])     // 4.2" 400x300, black/white/red (UC8176)

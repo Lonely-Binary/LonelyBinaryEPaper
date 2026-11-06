@@ -30,6 +30,7 @@ Lonely Binary's own panels, smallest first.
 | `LB_154_BWR` | 1.54" **black, white and red**, Lonely Binary panel — [specification](docs/LB_154_BWR.md) | 152 × 152 | SSD1682 | 16.4 s / — |
 | `LB_154_BWY` | 1.54" **black, white and yellow**, Lonely Binary panel — [specification](docs/LB_154_BWY.md) | 152 × 152 | SSD1682 | 23.1 s / — |
 | `LB_213_BWR` | 2.13" **black, white and red**, Lonely Binary panel — [specification](docs/LB_213_BWR.md) | 250 × 122 | SSD1680 | 14.3 s / — |
+| `LB_266_BWR` | 2.66" **black, white and red**, Lonely Binary panel — [specification](docs/LB_266_BWR.md) | 296 × 152 | SSD1680 | 15.2 s / — |
 | `LB_420_BWRY` | 4.2" **black, white, red and yellow**, Lonely Binary panel — [specification](docs/LB_420_BWRY.md) | 400 × 300 | UC81xx | 23.5 s / — |
 | `LB_437_BWR` | 4.37" **black, white and red**, Lonely Binary panel — [specification](docs/LB_437_BWR.md) | 480 × 176 | UC81xx | 14.0 s / — |
 
