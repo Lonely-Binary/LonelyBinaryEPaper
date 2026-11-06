@@ -42,6 +42,7 @@ None of that applies here.
 | `LB_HED_EPD0750` | 7.5" black/white/RED bare panel (HED-EPD0750), UC8159, T5 pins; use LB_RED | 640 x 384, landscape | 8.4 s / none |
 | `LB_266_BWR` | 2.66" black/white/RED Lonely Binary panel, SSD1680, ESP32-S3 pins (CS 10, DC 2, RST 42, BUSY 41, SCK 12, MOSI 11); use LB_RED | 296 x 152, landscape | 15.2 s / none |
 | `LB_420_BWRY` | 4.2" black/white/RED/YELLOW Lonely Binary panel, UC81xx, ESP32-S3 pins (CS 10, DC 2, RST 42, BUSY 41, SCK 12, MOSI 11); use LB_RED and LB_YELLOW | 400 x 300, landscape | 23.5 s / none |
+| `LB_583_BWR` | 5.83" black/white/RED Lonely Binary panel, UC8179, ESP32-S3 pins (CS 10, DC 2, RST 42, BUSY 41, SCK 12, MOSI 11); use LB_RED | 648 x 480, landscape | 12.3 s / none |
 
 ## The whole API
 

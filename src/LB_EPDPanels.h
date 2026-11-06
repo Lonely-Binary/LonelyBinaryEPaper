@@ -197,6 +197,15 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
    * UNVERIFIED until first run. */
   {"lb_420_bwr", "LB 4.2 inch BWR", LB_EPD_UC8176, 400, 300, 0,
    false, 15000, 0, 3, false, &LB_WIRING_LB_S3},
+
+  /* LB_583_BWR - 5.83" black / white / red (HINK-E0583A01-A0, label
+   * HE583A02RE). UltraChip-style: BUSY low = busy, low ~55 ms after power-on
+   * 0x04 (probed 2026-11-06). Driven by the UC8179 sequence at 648 x 480
+   * (the GDEW0583Z83 generation). Verified 2026-11-06 on an ESP32-S3:
+   * colours and orientation correct, BUSY 11 538 ms for any content.
+   * See docs/LB_583_BWR.md. */
+  {"lb_583_bwr", "LB 5.83 inch BWR", LB_EPD_UC8179, 648, 480, 0,
+   false, 11538, 0, 3, false, &LB_WIRING_LB_S3},
 };
 
 // ── Boards with a panel built in ─────────────────────────────
@@ -223,3 +232,4 @@ static const LB_EPDPanelDef LB_EPD_PANELS[] = {
 #define LB_420_BWRY (&LB_EPD_PANELS[11])    // 4.2" 400x300, black/white/red/yellow
 #define LB_266_BWR (&LB_EPD_PANELS[12])     // 2.66" 296x152, black/white/red (SSD1680)
 #define LB_420_BWR (&LB_EPD_PANELS[13])     // 4.2" 400x300, black/white/red (UC8176)
+#define LB_583_BWR (&LB_EPD_PANELS[14])     // 5.83" 648x480, black/white/red (UC8179)
