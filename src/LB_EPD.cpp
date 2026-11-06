@@ -131,7 +131,7 @@ void LB_EPD::hardwareReset() {
 // See the note at the top of LB_EPD.h. Solomon (SSD16xx): BUSY high = busy.
 // UltraChip (UC8179): the other way round - its pin is BUSY_N.
 long LB_EPD::waitBusy(uint32_t timeoutMs) {
-  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159 || _panel->driver == LB_EPD_JD79653A || _panel->driver == LB_EPD_UC81XX_Y) ? LOW : HIGH;
+  const int busy = (_panel->driver == LB_EPD_UC8179 || _panel->driver == LB_EPD_UC8176 || _panel->driver == LB_EPD_UC8159 || _panel->driver == LB_EPD_JD79653A || _panel->driver == LB_EPD_UC81XX_Y || _panel->driver == LB_EPD_UC81XX_RY) ? LOW : HIGH;
   const uint32_t t0 = millis();
   while (digitalRead(_w.busy) != busy) {
     if (millis() - t0 > 200) break;  // never went busy: already done
@@ -344,6 +344,7 @@ long LB_EPD::refreshColour(const uint8_t *bw, const uint8_t *red, uint32_t strid
   if (_panel->driver == LB_EPD_UC8179) return refreshUC8179(bw, red, stride);
   if (_panel->driver == LB_EPD_UC8159) return refreshUC8159(bw, red, stride);
   if (_panel->driver == LB_EPD_UC81XX_Y) return refreshUC81xxY(bw, red, stride);
+  if (_panel->driver == LB_EPD_UC81XX_RY) return refreshUC81xxRY(bw, red, stride);
   if (_panel->driver == LB_EPD_SSD1680 || _panel->driver == LB_EPD_SSD1682) return refreshSSD1680Colour(bw, red, stride);
   const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
 
@@ -719,4 +720,101 @@ long LB_EPD::refreshUC81xxY(const uint8_t *bw, const uint8_t *colour, uint32_t s
 // so that is all it records: the next update is a full one.
 void LB_EPD::sleep() {
   _partialReady = false;
+}
+
+// ─── UC81xx four-ink black / white / red / yellow (4.2" 400 x 300) ──────────
+//
+// DKE / GYSDISPLAY DEPG0420RYF668F38. The sequence is the factory sample's
+// (DEPG0420RY683FxX.c: Epaper_Initial, Epaper_Update_and_Deepsleep) as proven
+// by the QC repository's direct driver. Its register values are NOT those of
+// the 2.13" / 2.9" four-ink panels: no 0x4D, 0x66, 0xB4, 0xB6, 0xE3.
+//
+// The library keeps two 1-bit planes (LonelyBinaryEPaper.cpp, writeSpan);
+// the panel wants one 2-bit stream. Each pixel's pair of bits is
+//   (bw, colour): (0, 0) black, (1, 0) white, (0, 1) red, (1, 1) yellow
+// and goes out as the panel's code: 0 black, 1 white, 2 yellow, 3 red.
+//
+// !! 0x12 takes a parameter byte (0x00) !!
+//   Without it the controller accepts the command, BUSY never moves and the
+//   "refresh" returns in about 200 ms with nothing drawn (QC, 2.9" four-ink).
+
+long LB_EPD::refreshUC81xxRY(const uint8_t *bw, const uint8_t *colour, uint32_t stride) {
+  const uint32_t timeout = (uint32_t)_panel->fullMs * 4;
+  const uint16_t w = _panel->width, h = _panel->height;
+
+  hardwareReset();
+  waitBusy(3000);
+  cmd(0x06);  // booster soft start (factory: "new boosterset 47uH")
+  dat(0x0F);
+  dat(0x8B);
+  dat(0x9C);
+  dat(0x96);
+  cmd(0x00);  // panel setting
+  dat(0x2F);
+  dat(0x69);
+  waitBusy(3000);  // the factory reads BUSY here
+  cmd(0x01);  // power setting
+  dat(0x07);
+  dat(0xF0);
+  cmd(0x50);  // VCOM and data interval: border white
+  dat(0x37);
+  cmd(0x61);  // resolution
+  dat(w >> 8);
+  dat(w & 0xFF);
+  dat(h >> 8);
+  dat(h & 0xFF);
+  cmd(0x62);
+  dat(0x64);
+  dat(0x53);
+  cmd(0x65);  // gate / source start: 0
+  dat(0x00);
+  dat(0x00);
+  dat(0x00);
+  dat(0x00);
+  cmd(0x30);  // PLL
+  dat(0x08);
+  cmd(0xE9);
+  dat(0x01);
+
+  // Row by row: two planes in, one 2-bit stream out, four pixels a byte,
+  // leftmost pixel in the top bits.
+  static const uint8_t code[4] = {0x0, 0x1, 0x3, 0x2};  // index (colour << 1 | bw)
+  cmd(0x10);
+  uint8_t row[200];  // up to 800 pixels a row
+  const uint16_t outBytes = (w + 3) / 4;
+  _spi->beginTransaction(SPISettings(_hz, MSBFIRST, SPI_MODE0));
+  digitalWrite(_w.cs, LOW);
+  for (uint16_t y = 0; y < h; y++) {
+    const uint16_t src = _panel->mirrorGate ? h - 1 - y : y;
+    const uint8_t *b = bw + (size_t)src * stride, *c = colour + (size_t)src * stride;
+    for (uint16_t o = 0; o < outBytes; o++) {
+      uint8_t out = 0;
+      for (uint8_t k = 0; k < 4; k++) {
+        const uint16_t px = o * 4 + k;
+        uint8_t v = 0x1;  // past the edge: white
+        if (px < w) {
+          const uint8_t m = 0x80 >> (px & 7);
+          v = code[((c[px >> 3] & m) ? 2 : 0) | ((b[px >> 3] & m) ? 1 : 0)];
+        }
+        out = (uint8_t)((out << 2) | v);
+      }
+      row[o] = out;
+    }
+    _spi->writeBytes(row, outBytes);
+  }
+  digitalWrite(_w.cs, HIGH);
+  _spi->endTransaction();
+
+  cmd(0x04);  // power on
+  waitBusy(10000);
+  cmd(0x12);  // display refresh - the parameter byte is not optional
+  dat(0x00);
+  const long ms = waitBusy(timeout);
+  cmd(0x02);  // power off
+  dat(0x00);
+  waitBusy(5000);
+  cmd(0x07);  // deep sleep
+  dat(0xA5);
+  _partialReady = false;
+  return ms;
 }

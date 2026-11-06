@@ -3,6 +3,7 @@
 
 constexpr lb_color_t LB_EPDPanel::kInks[3];
 constexpr lb_color_t LB_EPDPanel::kInksY[3];
+constexpr lb_color_t LB_EPDPanel::kInks4[4];
 
 // ─── LB_EPDPanel ────────────────────────────────────────────────────────────
 
@@ -25,8 +26,9 @@ void LB_EPDPanel::flush(lb_flush_t mode) {
   }
 }
 
-// Three-ink panels only (the others hand the canvas their buffer). Each ink is
-// a pair of bits: black (0, 0), white (1, 0), red (-, 1).
+// Colour panels only (the others hand the canvas their buffer). Each ink is a
+// pair of bits (bw, colour). Three inks: black (0, 0), white (1, 0), the third
+// ink (-, 1). Four inks: black (0, 0), white (1, 0), red (0, 1), yellow (1, 1).
 static void setBits(uint8_t *row, int16_t x, int16_t w, bool on) {
   for (int16_t i = x; i < x + w; i++) {
     const uint8_t m = (uint8_t)(0x80 >> (i & 7));
@@ -40,8 +42,13 @@ void LB_EPDPanel::writeSpan(int16_t x, int16_t y, int16_t w, lb_color_t index) {
   if (x + w > _w) w = _w - x;
   if (w <= 0) return;
   const size_t off = (size_t)y * _stride;
-  setBits(_fb + off, x, w, index != 0);
-  setBits(_red + off, x, w, index == 2);
+  if (_four) {
+    setBits(_fb + off, x, w, index == 1 || index == 3);
+    setBits(_red + off, x, w, index >= 2);
+  } else {
+    setBits(_fb + off, x, w, index != 0);
+    setBits(_red + off, x, w, index == 2);
+  }
 }
 
 void LB_EPDPanel::sleep() {
@@ -70,6 +77,7 @@ bool LB_EPaper::begin() {
   _stride = (_w + 7) / 8;
   _partial = _panel->partialMs > 0;
   _yellow = _panel->yellow;
+  _four = _panel->inks >= 4;
   const size_t bytes = _stride * _h;
   _fb = (uint8_t *)malloc(bytes);
   if (!_fb) {
@@ -108,10 +116,11 @@ void LB_EPaper::printInfo(Print &out) const {
              : _panel->driver == LB_EPD_UC8176 ? "UC8176"
              : _panel->driver == LB_EPD_UC8159 ? "UC8159"
              : _panel->driver == LB_EPD_JD79653A ? "JD79653A"
-             : _panel->driver == LB_EPD_UC81XX_Y ? "UC81xx"
+             : _panel->driver == LB_EPD_UC81XX_Y || _panel->driver == LB_EPD_UC81XX_RY ? "UC81xx"
              : _panel->driver == LB_EPD_SSD1682 ? "SSD1682"
              : _panel->driver == LB_EPD_SSD1677 ? "SSD1677" : "SSD1680",
-             _panel->inks >= 3 ? (_panel->yellow ? "black / white / yellow" : "black / white / red") : "black / white");
+             _panel->inks >= 4 ? "black / white / red / yellow"
+             : _panel->inks >= 3 ? (_panel->yellow ? "black / white / yellow" : "black / white / red") : "black / white");
   out.printf("Resolution : %dx%d  (native %dx%d, rotation %d)\n",
              width(), height(), _panel->width, _panel->height, rotation());
   if (_panel->partialMs)
